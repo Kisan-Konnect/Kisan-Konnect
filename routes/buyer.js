@@ -11,6 +11,15 @@ const { find } = require("../models/Crop");
 var Grid = require("gridfs-stream");
 const conn = mongoose.connection;
 
+function authBuyer(req) {
+  if (req.isAuthenticated()) {
+    if (req.user.role == "buyer") {
+      return Promise.resolve(true);
+    }
+  }
+  return Promise.resolve(false);
+}
+
 router.get("/", (req, res) => {
   if (req.isAuthenticated()) {
     if (req.user.role == "buyer") res.redirect("/buyer/dashboard");
@@ -20,10 +29,10 @@ router.get("/", (req, res) => {
         "error_msg",
         "Please log out as a " + req.user.role + " to view this resource "
       );
-      res.render("buyerWelcome", { req: req });
+      res.render("userWelcome", { req: req, role:"buyer" });
     }
   } else {
-    res.render("buyerWelcome", { req: req });
+    res.render("userWelcome", { req: req, role:'buyer' });
   }
 });
 
@@ -38,10 +47,10 @@ router.get("/login", (req, res) => {
         "error_msg",
         "Please log out as a " + req.user.role + " to view this resource "
       );
-      res.render("buyerLogin", { req: req });
+      res.render("Login", { req: req, role: "buyer" });
     }
   } else {
-    res.render("buyerLogin", { req: req });
+    res.render("Login", { req: req, role: "buyer" });
   }
 });
 
@@ -54,30 +63,20 @@ router.get("/register", (req, res) => {
     else {
       req.flash(
         "error_msg",
-        "Please log out as a " + req.user.role + " to view this resource "
+        "Please log out as a Buyer to view this resource "
       );
-      res.render("buyerRegister", { req: req });
+      res.render("register", { req: req, role: "buyer" });
     }
   } else {
-    res.render("buyerRegister", { req: req });
+    res.render("register", { req: req, role: "buyer" });
   }
 });
-function handleRegisterErrors(
-  name,
-  email,
-  password,
-  password2,
-  number,
-  address
-) {
+function handleRegisterErrors(name, password, password2, number, address) {
   let errors = [];
 
   // Check all fields are filled
   if (!name) {
     errors.push({ msg: "Please fill in your Name!" });
-  }
-  if (!email) {
-    errors.push({ msg: "Please fill in your Email!" });
   }
   if (!password) {
     errors.push({ msg: "Please fill in your Password!" });
@@ -85,8 +84,8 @@ function handleRegisterErrors(
   if (!password2) {
     errors.push({ msg: "Please Comfirm your Password!" });
   }
-  if (!number) {
-    errors.push({ msg: "Please fill in your Contact Details details!" });
+  if (!number || number.length != 10) {
+    errors.push({ msg: "Please fill in valid Contact Details!" });
   }
   if (!address) {
     errors.push({ msg: "Please fill in your Address!" });
@@ -109,46 +108,46 @@ function handleRegisterErrors(
 //Register Handel
 router.post("/register", (req, res) => {
   const name = req.body.name.toString();
-  const email = req.body.email.toString();
   const password = req.body.password.toString();
   const password2 = req.body.password2.toString();
   const number = req.body.number.toString();
   const address = req.body.address.toString();
-  handleRegisterErrors(name, email, password, password2, number, address).then(
+  console.log("ADDRESSSS", address);
+  handleRegisterErrors(name, password, password2, number, address).then(
     (errors) => {
       if (errors.length > 0) {
-        res.render("buyerRegister", {
-          errors,
-          name,
-          email,
-          password,
-          password2,
-          number,
-          address,
+        res.render("register", {
+          errors: errors,
+          name: name,
+          password: "",
+          password2: "",
+          number: number,
+          address: address,
           req: req,
+          role: "buyer",
         });
       } else {
-        var email_query = { email: email.toString(), role: "buyer" };
-        Buyers.findOne(email_query, (err, obj) => {
+        var number_query = { number: number.toString(), role: "buyer" };
+        Buyers.findOne(number_query, (err, obj) => {
           if (obj) {
             console.log(obj);
             // If Found, Display error Message
             errors.push({ msg: "Buyer Already Exists!" });
-            res.render("buyerRegister", {
-              errors,
-              name,
-              email,
-              password,
-              password2,
+            res.render("register", {
+              errors: errors,
+              name: name,
+              password: "",
+              password2: "",
               req: req,
+              address: address,
+              role: "buyer",
             });
           } else {
             const newBuyer = Buyers({
-              name,
-              email,
-              password,
-              address,
-              phone: number,
+              name: name,
+              password: password,
+              address: address,
+              number: number,
               role: "buyer",
             });
             bcrypt.genSalt(10, (err, salt) =>
@@ -252,7 +251,7 @@ router.get("/listing", (req, res) => {
     if (req.user.role == "buyer") {
       findListings(Crops, Buyers)
         .then((crops) => {
-          res.render("buyerListing", {
+          res.render("buyer", {
             crops: crops,
             req: req,
             title: "Marketplace",
@@ -278,6 +277,7 @@ async function findListingsOfUser(Model, uid, Model1) {
     Model.find(query).then(async (docs) => {
       for (i = 0; i < docs.length; i++) {
         doc = docs[i];
+        console.log(doc);
         let crop = await Crops.findById(doc.cropID);
         let farmer = await Model1.findById(crop.farmerID);
         var newdoc;
@@ -323,10 +323,9 @@ router.get("/dashboard", (req, res) => {
       findListingsOfUser(InProgress, req.user._id, Buyers)
         .then((crops) => {
           // console.log(crops);
-          res.render("buyerListing", {
+          res.render("buyer", {
             crops: crops,
             req: req,
-            history: "Dashboard",
             title: "Dashboard",
           });
         })
@@ -349,13 +348,13 @@ router.get("/history", (req, res) => {
   if (req.isAuthenticated()) {
     if (req.user.role == "buyer") {
       //QUERY IN PROGRESS
-      findListingsOfUser(Transaction, req.user._id)
+      findListingsOfUser(Transaction, req.user._id, Buyers)
         .then((crops) => {
           //console.log(crops);
-          res.render("buyerDashboard", {
+          res.render("buyer", {
             crops: crops,
             req: req,
-            history: "History",
+            title: "History",
           });
         })
         .catch((err) => console.error(err));

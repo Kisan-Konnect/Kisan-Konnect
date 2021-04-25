@@ -5,17 +5,13 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  email: {
+  number: {
     type: String,
     required: true,
   },
-  phone: {
-    type: String,
-    // required: true,
-  },
   address: {
     type: String,
-    // required: true,
+    required: true,
   },
   password: {
     type: String,
@@ -29,7 +25,7 @@ const UserSchema = new mongoose.Schema({
     type: String,
     enum: ["farmer", "buyer", "mod"],
     default: "farmer",
-  }
+  },
 });
 
 const User = mongoose.model("User", UserSchema);

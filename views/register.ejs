@@ -6,27 +6,29 @@
         <i class="fas fa-user-plus"></i> Register
       </h1>
       <%- include ("./partials/messages") %>
-      <form action="/farmer/register" method="POST">
+      <% var link; %>
+      <% if(role == 'farmer'){link = "/farmer/register"} else if(role == 'buyer') {link = "/buyer/register";} %>
+      <form action="<%= link %> " method="POST">
         <div class="form-group">
           <label for="name">Name</label>
           <input
             type="name"
             id="name"
             name="name"
-            class="form-control"
+            class="form-control form-control-lg"
             placeholder="Enter Name"
             value="<%= typeof name != 'undefined' ? name : '' %>"
           />
         </div>
         <div class="form-group">
-          <label for="email">Email</label>
+          <label for="number">Contact Number</label>
           <input
-            type="email"
-            id="email"
-            name="email"
+            type="number"
+            id="number"
+            name="number"
             class="form-control"
-            placeholder="Enter Email"
-            value="<%= typeof email != 'undefined' ? email : '' %>"
+            placeholder="Enter Your Contact Number"
+            value="<%= typeof number != 'undefined' ? number : '' %>"
           />
         </div>
         <div class="form-group">
@@ -51,13 +53,23 @@
             value="<%= typeof password2 != 'undefined' ? password2 : '' %>"
           />
         </div>
+        <div class="form-group">
+          <label for="address">Address</label>
+          <textarea
+            type="address"
+            id="address"
+            name="address"
+            class="form-control"
+            placeholder="Enter Your Address"
+          ><%= typeof address != 'undefined' ? address : '' %></textarea>
+        </div>
         <button type="submit" class="btn btn-primary btn-block">
           Register
         </button>
       </form>
-      <p class="lead mt-4">
-        Have An Account? <a href="/farmer/login">Login</a>
-      </p>
+      <% var link1; %>
+      <% if(role == 'farmer'){link1 = "/farmer/login"} else if(role == 'buyer') {link1 = "/buyer/login";} %>
+      <p class="lead mt-4">Have An Account? <a href="<%= link1 %>">Login</a></p>
     </div>
   </div>
 </div>

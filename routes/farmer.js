@@ -45,6 +45,28 @@ conn.once("open", () => {
   });
 });
 
+function getImg(doc) {
+  var filename = doc._id.toString();
+  var buffer = "";
+  return new Promise((resolve, reject) => {
+    gfs.find({ filename: filename }).toArray((gfserr, files) => {
+      if (!files[0] || files.length === 0) {
+        console.log("FILE NOT FOUND");
+        resolve(null);
+      } else {
+        const readStream = gfs.openDownloadStreamByName(files[0].filename);
+        var img = "";
+        readStream.on("data", (chunk) => {
+          img += chunk.toString("base64");
+        });
+        readStream.on("end", () => {
+          resolve(img);
+        });
+      }
+    });
+  });
+}
+
 function authFarmer(req) {
   if (req.isAuthenticated()) {
     if (req.user.role == "farmer") {
@@ -64,10 +86,10 @@ router.get("/", (req, res) => {
         "error_msg",
         "Please log in as a farmer to view this resource "
       );
-      res.render("farmerWelcome", { req: req });
+      res.render("userWelcome", { req: req, role: 'farmer' });
     }
   } else {
-    res.render("farmerWelcome", { req: req });
+    res.render("userWelcome", { req: req, role: 'farmer' });
   }
 });
 router.get("/login", (req, res) => {
@@ -79,10 +101,10 @@ router.get("/login", (req, res) => {
         "error_msg",
         "Please log out as a " + req.user.role + " to view this resource "
       );
-      res.render("farmerLogin", { req: req });
+      res.render("Login", { req: req, role: "farmer" });
     }
   } else {
-    res.render("farmerLogin", { req: req });
+    res.render("Login", { req: req, role: "farmer" });
   }
 });
 router.get("/register", (req, res) => {
@@ -94,22 +116,30 @@ router.get("/register", (req, res) => {
         "error_msg",
         "Please log out as a " + req.user.role + " to view this resource "
       );
-      res.render("farmerRegister", { req: req });
+      res.render("register", { req: req, role: "farmer" });
     }
   } else {
-    res.render("farmerRegister", { req: req });
+    res.render("register", { req: req, role: "farmer" });
   }
 });
-router.post("/register", (req, res) => {
-  const name = req.body.name.toString();
-  const email = req.body.email.toString();
-  const password = req.body.password.toString();
-  const password2 = req.body.password2.toString();
+function handleFarmerRegister(name, number, password, password2, address) {
   let errors = [];
 
   // Check all fields are filled
-  if (!name || !email || !password || !password2) {
-    errors.push({ msg: "Please fill in all details!" });
+  if (!name) {
+    errors.push({ msg: "Please fill in your name!" });
+  }
+  if (!number || number.length !== 10) {
+    errors.push({ msg: "Please fill in a valid phone number!" });
+  }
+  if (!password) {
+    errors.push({ msg: "Please fill in your password!" });
+  }
+  if (!password2) {
+    errors.push({ msg: "Please confirm your password!" });
+  }
+  if (!address) {
+    errors.push({ msg: "Please enter your address!" });
   }
 
   // Check passwords match
@@ -120,64 +150,78 @@ router.post("/register", (req, res) => {
   if (password.length < 6) {
     errors.push({ msg: "Password should be at least 6 characters" });
   }
+  return Promise.resolve(errors);
+}
 
-  if (errors.length > 0) {
-    res.render("farmerRegister", {
-      errors,
-      name,
-      email,
-      password,
-      password2,
-      req: req,
-    });
-  } else {
-    var email_query = { email: email.toString(), role: "farmer" };
-    Farmers.findOne(email_query, (err, obj) => {
-      if (obj) {
-        console.log(obj);
-        // If Found, Display error Message
-        errors.push({ msg: "Farmer Already Exists!" });
-        res.render("farmerRegister", {
-          errors,
-          name,
-          email,
-          password,
-          password2,
+router.post("/register", (req, res) => {
+  const name = req.body.name.toString();
+  const number = req.body.number.toString();
+  const password = req.body.password.toString();
+  const password2 = req.body.password2.toString();
+  const address = req.body.address.toString();
+  handleFarmerRegister(name, number, password, password2, address).then(
+    (errors) => {
+      if (errors.length > 0) {
+        res.render("register", {
+          errors: errors,
+          name: name,
+          number: number,
+          password: "",
+          password2: "",
+          address: address,
           req: req,
-        });
-      } else {
-        const newFarmer = Farmers({
-          name,
-          email,
-          password,
           role: "farmer",
         });
-        bcrypt.genSalt(10, (err2, salt) =>
-          bcrypt.hash(newFarmer.password, salt, (err1, hash) => {
-            if (err1) throw err1;
+      } else {
+        var number_query = { number: number.toString(), role: "farmer" };
+        Farmers.findOne(number_query, (err, obj) => {
+          if (obj) {
+            console.log(obj);
+            // If Found, Display error Message
+            errors.push({ msg: "Farmer Already Exists!" });
+            res.render("register", {
+              errors: errors,
+              name: name,
+              number: number,
+              password: "",
+              password2: "",
+              address: address,
+              req: req,
+              role: "farmer",
+            });
+          } else {
+            const newFarmer = Farmers({
+              name: name,
+              number: number,
+              password: password,
+              role: "farmer",
+              address: address,
+            });
+            bcrypt.genSalt(10, (err2, salt) =>
+              bcrypt.hash(newFarmer.password, salt, (err1, hash) => {
+                if (err1) throw err1;
 
-            // set password to the hash value of password
-            newFarmer.password = hash;
+                // set password to the hash value of password
+                newFarmer.password = hash;
 
-            // save user details to db
-            newFarmer
-              .save()
-              .then((user_temp) => {
-                req.flash(
-                  "success_msg",
-                  `Registration successful, Welcome ${newFarmer.name}`
-                );
-                res.redirect("/farmer/login");
+                // save user details to db
+                newFarmer
+                  .save()
+                  .then((user_temp) => {
+                    req.flash(
+                      "success_msg",
+                      `Registration successful, Welcome ${newFarmer.name}`
+                    );
+                    res.redirect("/farmer/login");
+                  })
+                  .catch((err_new) => console.log(err_new));
               })
-              .catch((err_new) => console.log(err_new));
-          })
-        );
+            );
+          }
+        });
       }
-    });
-    //  .then((user) => {
-
-    //.catch((err) => console.error(err));
-  }
+    }
+  );
 });
 router.post("/login", (req, res, next) => {
   passport.authenticate("farmerLocal", {
@@ -195,7 +239,13 @@ router.get("/createlisting", (req, res) => {
   authFarmer(req)
     .then((isAuthFarmer) => {
       if (isAuthFarmer) {
-        res.render("farmerCreateListing", { req: req, func: "create" });
+        res.render("farmerCreateListing", {
+          req: req,
+          func: "create",
+          name: "",
+          quantity: null,
+          price: null,
+        });
       } else {
         req.flash(
           "error_msg",
@@ -269,23 +319,18 @@ function handleCreateListingErrors(name, quantity, price, image) {
 }
 
 router.get("/upload_image/:cropID", (req, res) => {
-  res.render("uploadImage", { cropID: req.params.cropID, func: "create" });
+  res.render("uploadImage", { cropID: req.params.cropID, func: "create", req:req });
 });
-
 router.post("/upload_image/:cropID", upload.single("image"), (req, res) => {
-  res.redirect("/farmer/dashboard");
+  res.redirect("/farmer/currentlistings");
 });
-
 router.post("/editimage/:cropID", upload.single("image"), (req, res) => {
   gfs.find({ filename: req.params.cropID }).toArray((err, images) => {
     if (!images[0] || images.length === 0) {
-      res.redirect("/farmer/currentlistings/");
     } else {
       if (images.length == 2) {
         var d1 = new Date(images[0].uploadDate);
         var d2 = new Date(images[1].uploadDate);
-        console.log("DATE 0: ", d1);
-        console.log("DATE 1: ", d2);
         if (d1 < d2) {
           gfs
             .delete(new mongoose.Types.ObjectId(images[0]._id))
@@ -293,7 +338,6 @@ router.post("/editimage/:cropID", upload.single("image"), (req, res) => {
               if (err) {
                 return res.status(404).json({ err: err });
               }
-              res.redirect("/farmer/currentlistings/");
             });
         } else {
           gfs
@@ -302,15 +346,13 @@ router.post("/editimage/:cropID", upload.single("image"), (req, res) => {
               if (err) {
                 return res.status(404).json({ err: err });
               }
-              res.redirect("/farmer/currentlistings/");
             });
         }
       }
     }
   });
-  res.redirect("/farmer/currentlistings/");
+  res.redirect("/");
 });
-
 router.post("/createlisting", async (req, res) => {
   authFarmer(req)
     .then((isAuthFarmer) => {
@@ -366,21 +408,13 @@ router.post("/createlisting", async (req, res) => {
       console.error(autherr);
     });
 });
-
 router.post("/editlisting/:cropID", async (req, res) => {
   authFarmer(req)
     .then((isAuthFarmer) => {
       if (isAuthFarmer) {
-        // console.log("REDDDDDDDDDDDDDDDDDDDQQQQQQQQQQQQQQQQQ", req);
-        //var imggg = new Buffer.from(req.image, "base64");
-        //console.log("FIODUBVOIDUVBC", imggg);
         const name = req.body.name.toString();
         const quantity = parseInt(req.body.quantity);
         const price = parseInt(req.body.price);
-        console.log("NAMEEEEE: ", name);
-        // const image = req.body.image.toString("base64");
-        // console.log(image);
-        // console.log("IMAGGGGGEEEEEE");
         handleCreateListingErrors(name, quantity, price).then((errors) => {
           if (errors.length > 0) {
             res.render("farmerCreateListing", {
@@ -393,26 +427,21 @@ router.post("/editlisting/:cropID", async (req, res) => {
               req: req,
             });
           } else {
-            //console.log("EDITINGGGG CROPPPPPP!!!!");
-            //console.log(image);
             var crop = {
               name: name,
               price: price,
               quantity: quantity,
             };
-            // console.log("IDDDDDD: ", req.params.cropID);
             Crops.findByIdAndUpdate(req.params.cropID, crop)
               .then((crop, err) => {
                 if (err) {
                   console.log("ERROR: ", err);
                   return;
                 }
-                console.log("I'M HEREEEEE: ");
-                res.render("uploadImage", { cropID: crop._id, func: "edit" });
+                res.render("uploadImage", { cropID: crop._id, func: "edit", req: req });
               })
               .catch((err) => console.error(err));
           }
-          // res.redirect("/farmer/upload_image/" + crop._id);
         });
       } else {
         req.flash(
@@ -426,52 +455,68 @@ router.post("/editlisting/:cropID", async (req, res) => {
       console.error(autherr);
     });
 });
-
-async function findListingsOfUser(Model, uid) {
-  var a = [];
-  for await (const doc of Model.find()) {
-    let query = { _id: doc.cropID, farmerID: uid };
-    let crop = await Crops.findOne(query);
-    if (crop) {
-      let buyer = await Farmers.findById(doc.buyerID);
-      if (Model == InProgress) {
-        a.push({
-          _id: doc._id,
-          name: crop.name,
-          price: doc.price,
-          farmerID: crop.farmerID,
-          buyerID: doc.buyerID,
-          quantity: doc.quantity,
-          date: doc.date,
-          sent: doc.sent,
-          buyerName: buyer.name,
-        });
-      } else {
-        a.push({
-          _id: doc._id,
-          name: crop.name,
-          price: doc.price,
-          farmerID: crop.farmerID,
-          buyerID: doc.buyerID,
-          quantity: doc.quantity,
-          date: doc.date,
-          buyerName: buyer.name,
-        });
+async function findListingsOfUser(Model, uid, Model1) {
+  return new Promise((resolve, reject) => {
+    a = [];
+    var result;
+    Model.find().then(async (docs) => {
+      for (i = 0; i < docs.length; i++) {
+        doc = docs[i];
+        let crop;
+        try {
+          crop = await Crops.findById(doc.cropID);
+        } catch (err) {
+          console.error(err);
+        }
+        if (crop) {
+          let buyer = await Model1.findById(crop.farmerID);
+          var newdoc;
+          if (Model == InProgress) {
+            newdoc = {
+              _id: doc._id,
+              name: crop.name,
+              price: doc.price,
+              farmerID: crop.farmerID,
+              buyerID: doc.buyerID,
+              quantity: doc.quantity,
+              date: doc.date,
+              sent: doc.sent,
+              buyerName: buyer.name,
+            };
+          } else {
+            newdoc = {
+              _d: doc._id,
+              name: crop.name,
+              price: doc.price,
+              farmerID: crop.farmerID,
+              buyerID: doc.buyerID,
+              quantity: doc.quantity,
+              date: doc.date,
+              buyerName: buyer.name,
+            };
+          }
+          await getImg(crop)
+            .then((image) => {
+              newdoc.image = image;
+              a.push(newdoc);
+            })
+            .catch((getimgerr) => console.error(getimgerr));
+        }
       }
-    }
-  }
-  return Promise.resolve(a);
+      resolve(a);
+    });
+  });
 }
 router.get("/dashboard", (req, res) => {
   authFarmer(req)
     .then((isAuthFarmer) => {
       if (isAuthFarmer) {
-        findListingsOfUser(InProgress, req.user._id)
+        findListingsOfUser(InProgress, req.user._id, Farmers)
           .then((crops) => {
-            res.render("farmerDashboard", {
+            res.render("farmer", {
               crops: crops,
               req: req,
-              history: "Dashboard",
+              title: "Dashboard",
             });
           })
           .catch((err) => console.error(err));
@@ -488,13 +533,12 @@ router.get("/history", (req, res) => {
   authFarmer(req)
     .then((isAuthFarmer) => {
       if (isAuthFarmer) {
-        //QUERY IN PROGRESS
-        findListingsOfUser(Transaction, req.user._id)
+        findListingsOfUser(Transaction, req.user._id, Farmers)
           .then((crops) => {
-            res.render("farmerDashboard", {
+            res.render("farmer", {
               crops: crops,
               req: req,
-              history: "History",
+              title: "History",
             });
           })
           .catch((err) => console.error(err));
@@ -506,22 +550,32 @@ router.get("/history", (req, res) => {
     .catch((autherr) => console.error(autherr));
 });
 async function getCurrentListings(Model, uid) {
-  var a = [];
   var query = { farmerID: uid, available: true };
-  for await (const doc of Model.find(query)) {
-    a.push(doc);
-  }
-  return Promise.resolve(a);
+  return new Promise((resolve, reject) => {
+    var a = [];
+    Model.find(query).then(async (docs, err) => {
+      for (i = 0; i < docs.length; i++) {
+        var newdoc = docs[i];
+        await getImg(newdoc)
+          .then((image) => {
+            newdoc.image = image;
+            a.push(newdoc);
+          })
+          .catch((getimgerr) => console.error(getimgerr));
+      }
+      resolve(a);
+    });
+  }).catch((promiseerr) => console.error(promiseerr));
 }
 router.get("/currentlistings", (req, res) => {
   authFarmer(req)
     .then((isAuthFarmer) => {
       if (isAuthFarmer) {
         getCurrentListings(Crops, req.user._id).then((crops) => {
-          res.render("farmerDashboard", {
+          res.render("farmer", {
             req: req,
             crops: crops,
-            history: "Current Listings",
+            title: "Current Listings",
           });
         });
       } else {
@@ -539,25 +593,21 @@ router.get("/deleteCurrent/:cropID", (req, res) => {
       if (isAuthFarmer) {
         Crops.findById(req.params.cropID)
           .then((crop) => {
-            console.log(crop.farmerID, req.user._id, crop.available);
             if (
               crop.farmerID == req.user._id.toString() &&
               crop.available == 1
             ) {
               Crops.findByIdAndDelete(req.params.cropID)
                 .then((deletedCrop, obj) => {
-                  // console.log("Deleted Crop", deletedCrop);
                   gfs
                     .find({ filename: req.params.cropID })
                     .toArray((err, image) => {
                       if (!image[0] || image.length === 0) {
-                        console.log("NO IMAGEEEEEE");
                         return res.redirect("/farmer/currentlistings");
                       } else {
                         gfs
                           .delete(new mongoose.Types.ObjectId(image[0]._id))
                           .then((err, data) => {
-                            console.log("DELETED IMAGEEEEEE");
                             return res.redirect("/farmer/currentlistings");
                           });
                       }
@@ -567,7 +617,6 @@ router.get("/deleteCurrent/:cropID", (req, res) => {
                   console.error(delerr);
                 });
             } else {
-              console.log("FKEDDD");
               req.flash("error_msg", "You cant delete crop not owned by you!.");
               res.redirect("/farmer/login");
             }
@@ -582,22 +631,6 @@ router.get("/deleteCurrent/:cropID", (req, res) => {
     })
     .catch((autherr) => console.error(autherr));
 });
-
-router.post("/upload", (req, res) => {
-  setTimeout(() => {
-    console.log(req.body.image);
-  }, 2000);
-  // var base64ToBuffer = new Buffer.from(req.image, "base64"); //Convert to base64
-  // console.log("IOUJNBSFDKIJBVCS", base64ToBuffer);
-  //Write your insertcode of MongoDb
-
-  // res.end("Image uploaded Successfully");
-});
-
-router.get("/upload", function (req, res) {
-  res.render("test69");
-});
-
 router.get("/sent/:cropID", (req, res) => {
   authFarmer(req)
     .then((isAuthFarmer) => {

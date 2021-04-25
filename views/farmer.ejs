@@ -1,8 +1,21 @@
-<%- include('partials/menu', {req:req}); %>
+  <%- include('partials/menu', {req:req}); %>
 <link rel="stylesheet" href="../css/styles.css">
 <br>
-<h1 style="text-align: center;"><%=title%></h1>
-<br>
+<div style="text-align: center;">
+  <h1><%=title%></h1>
+  <br>
+  <% if(crops.length === 0){ %>
+    <h3>No data to display</h3>
+    <br>
+    <% if(title == "History") { %>
+      <h5>Your sold items will be shown here once delivered.</h5>
+    <% } else if(title == 'Dashboard') { %>
+      <h5>Your sold crops which are not yet delivered will be shown here. You will have to update the status when dispatched by you.</h5>
+    <% } else{ %>
+      <h5>Your created listings will be shown here which will be visible to all the buyers. Once created you can edit or delete them.</h5>
+    <% } %>
+  <% } %>
+</div>
 <div class = 'box'>
   <% for(var i=0; i < crops.length; i++) { %>
   <!--img src="cat.png" alt="i_can_has_cheezburger" !-->
@@ -15,15 +28,29 @@
     <% } else {%>
       <img class="<%=clas%>" style="<%=styles%>" src="data:image/jpeg;base64, <%= crops[i].image %>">
     <% } %>
-    <div class="card-body " style="align-content: flex-end;">
+    <div class="card-body ">
       <h3 class='card-title'><%= crops[i].name %></h3>
       <p class='card-text'>Quantity: <%= crops[i].quantity %></p>
       <p class='card-text'>Price: <%= crops[i].price %></p>
-      <p class='card-text'>Seller: <%= crops[i].farmerName %></p>
-      <% if (title == "Marketplace") {%>
-        <% var link = "/buyer/buy/" + crops[i]._id %>
-        <a href="<%=link %>" class="btn btn-primary btn-lg buybutton">Buy</a>
-        <br>
+      
+      <% if (title != "Current Listings") {%>
+        <p class='card-text'>Buyer: <%= crops[i].buyerName %></p>
+      <% } else{%>
+          <p class='card-text'>Status: Yet to be bought</p>
+        <% var editlink = "/farmer/editlisting/" + crops[i]._id %>
+          <a href="<%=editlink %>" class="btn btn-primary btn-lg buybutton">Edit</a>
+          <% var deletelink = "/farmer/deleteCurrent/" + crops[i]._id %>
+          <a href="<%=deletelink %>" class="btn btn-primary btn-lg buybutton" style="margin-top:2%">Delete</a>
+      <%}%>
+      <% if (title == "Dashboard") {%>
+        <% if (!crops[i].sent) {%> 
+          <% var link = "/farmer/sent/" + crops[i]._id %>
+          <p class='card-text'>Status: Yet to be dispatched by you</p>
+          <a href="<%=link %>" class="btn btn-primary btn-lg buybutton">Dispached</a>
+          <br>
+        <%} else {%>
+          <p class='card-text'>Status: Yet to be recieved by <%= crops[i].buyerName %></p>
+        <%}%>
       <%} else if (title == "Dashboard") {%>
         <% if (crops[i].sent) {%> 
           <p class="card-text">Order Sent</p>
@@ -57,9 +84,4 @@
   </div>
 
   <% } %>
-  <div class="card-body " style="align-content: flex-end;">
-    <h3 class='card-title'>Total Sales Today</h3>
-    <p class='card-text'>$56,890</p>
-
-  </div>
 </div>

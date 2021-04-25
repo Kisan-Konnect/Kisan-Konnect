@@ -9,15 +9,15 @@ module.exports = function (passport) {
     "farmerLocal",
     new LocalStrategy(
       {
-        usernameField: "email",
+        usernameField: "number",
       },
-      (email, password, done) => {
+      (number, password, done) => {
         //Match User
-        User.findOne({ email: email, role: "farmer" })
+        User.findOne({ number: number, role: "farmer" })
           .then((user) => {
             if (!user) {
               return done(null, false, {
-                message: "That Email is not registered",
+                message: "That Phone Number is not registered",
               });
             } else {
               //Match Pasword
@@ -42,15 +42,15 @@ module.exports = function (passport) {
     "buyerLocal",
     new LocalStrategy(
       {
-        usernameField: "email",
+        usernameField: "number",
       },
-      (email, password, done) => {
+      (number, password, done) => {
         //Match User
-        User.findOne({ email: email, role: "buyer" })
+        User.findOne({ number: number, role: "buyer" })
           .then((user) => {
             if (!user) {
               return done(null, false, {
-                message: "That Email is not registered",
+                message: "That Phone Number is not registered",
               });
             } else {
               //Match Pasword
