@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Image</title>
+  </head>
+
+  <body>
+    <% if(func == 'edit'){ %>
+      <h1>Edit/Add Image</h1>
+    <% } else if(func == 'create'){ %>
+      <h1>Add Image</h1>
+    <% } %>
+    <hr />
+    <div>
+      <% var link =  "/farmer/upload_image/" + cropID; %>
+      <% if(func == 'edit'){ link =  "/farmer/editimage/" + cropID; } %>
+      <form action="<%= link %>" method="POST" enctype="multipart/form-data">
+        <!-- <div>
+          <label for="name">Image Title</label>
+          <input
+            type="text"
+            id="name"
+            placeholder="Name"
+            value=""
+            name="name"
+            required
+          />
+        </div> -->
+        <div>
+          <label for="image">Upload Image</label>
+          <input type="file" id="image" name="image" value="" />
+        </div>
+        <div>
+          <button type="submit">Submit</button>
+        </div>
+      </form>
+    </div>
+
+    <hr />
+
+    
+  </body>
+</html>

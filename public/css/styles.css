@@ -1,0 +1,56 @@
+/*.cards {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  transition: 0.1s;
+  display: flex;
+}
+.card:hover {
+  box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+}*/
+.box {
+  display: flex;
+  flex-wrap: wrap;
+}
+.item {
+  border: 2px solid darkgray;
+  border-radius: 2%;
+}
+.item h3 {
+  color: red;
+}
+.item a {
+  width: 100%;
+  padding-bottom: 1rem;
+}
+.itm img {
+  max-height: 200px;
+  overflow: hidden;
+}
+/*@media (max-width: 800px) {
+  .box item {
+    width: 50%;
+  }
+}*/
+@media screen and (min-width: 1200px) {
+  .item {
+    width: 24%;
+  }
+}
+
+@media screen and (max-width: 1200px) {
+  .item {
+    width: 32%;
+  }
+}
+@media screen and (max-width: 1000px) {
+  .item {
+    width: 48%;
+  }
+}
+@media screen and (max-width: 800px) {
+  .box {
+    flex-direction: column;
+  }
+  .item {
+    width: 95%;
+  }
+}

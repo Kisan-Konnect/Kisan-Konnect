@@ -1,0 +1,44 @@
+<%- include('partials/menu', {req:req}); %>
+<link rel="stylesheet" href="../css/styles.css">
+
+<div class = 'box'>
+  <% for(var i=0; i < crops.length; i++) { %>
+  <!--img src="cat.png" alt="i_can_has_cheezburger" !-->
+  <% var clas = 'card-img-top img-responsive center' %>
+      <% var styles = 'height:200px; overflow:hidden;' %>
+  <div class="item center" style="margin-left:10px;">
+    <% if (!crops[i].image) { %>
+      
+      <img class="<%=clas%>" style="<%=styles%>" src="https://www.graphicsprings.com/filestorage/stencils/71f2345d19439f1a3336e316de93bbbb.png?width=500&height=500" ></i>
+    <% } else {%>
+      <img class="<%=clas%>" style="<%=styles%>" src="data:image/jpeg;base64, <%= crops[i].image %>">
+    <% } %>
+    <div class="card-body " style="align-content: flex-end;">
+      <h3 class='card-title'><%= crops[i].name %></h3>
+      <p class='card-text'>Quantity: <%= crops[i].quantity %></p>
+      <p class='card-text'>Price: <%= crops[i].price %></p>
+      <p class='card-text'>Seller: <%= crops[i].farmerName %></p>
+      <% var link = "/buyer/buy/" + crops[i]._id %>
+      <a href="<%=link %>" class="btn btn-primary btn-lg buybutton">Buy</a>
+      <div class="card-footer">
+      <p class='card-text'>Age: <% if (Math.floor((new Date() - crops[i].date) / 1000) / 31536000 > 1) { %>
+        <%=Math.floor(Math.floor((new Date() - crops[i].date) / 1000) / 31536000) + " year(s) ago"%>
+      <% } else if (Math.floor((new Date() - crops[i].date) / 1000) / 2592000 > 1) { %>
+        <%=Math.floor(Math.floor((new Date() - crops[i].date) / 1000) / 2592000) + " month(s) ago"%>
+      <% } else if (Math.floor((new Date() - crops[i].date) / 1000) / 86400 > 1) { %>
+        <%=Math.floor(Math.floor((new Date() - crops[i].date) / 1000) / 86400) + " day(s) ago"%>
+      <% } else if (Math.floor((new Date() - crops[i].date) / 1000) / 3600 > 1) { %>
+        <%=Math.floor(Math.floor((new Date() - crops[i].date) / 1000) / 3600) + " hour(s) ago"%>
+      <% } else if (Math.floor((new Date() - crops[i].date) / 1000) / 60 > 1) { %>
+        <%=Math.floor(Math.floor((new Date() - crops[i].date) / 1000) / 60) + " minute(s) ago"%>
+      <% } else{%>
+        <%=Math.floor((new Date() - crops[i].date) / 1000) + " second(s) ago"%>
+      <% }%> </p>
+      
+      </div>
+    </div>
+    
+  </div>
+
+  <% } %>
+</div>
