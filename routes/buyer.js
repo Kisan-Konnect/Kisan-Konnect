@@ -252,7 +252,11 @@ router.get("/listing", (req, res) => {
     if (req.user.role == "buyer") {
       findListings(Crops, Buyers)
         .then((crops) => {
-          res.render("buyerListing", { crops: crops, req: req });
+          res.render("buyerListing", {
+            crops: crops,
+            req: req,
+            title: "Marketplace",
+          });
         })
         .catch((err) => console.error(err));
     } else if (req.user.role == "farmer") res.redirect("/farmer/dashboard");
@@ -323,6 +327,7 @@ router.get("/dashboard", (req, res) => {
             crops: crops,
             req: req,
             history: "Dashboard",
+            title: "Dashboard",
           });
         })
         .catch((err) => console.error(err));
@@ -374,7 +379,6 @@ router.get("/buy/:trxID", (req, res) => {
       //QUERY AVAIL
       Crops.findByIdAndUpdate(req.params.trxID, {
         available: false,
-        quantity: 0,
       }).then((crop) => {
         var inProgress = new InProgress({
           cropID: crop._id,

@@ -39,9 +39,9 @@ const upload = multer({ storage });
 
 let gfs;
 
-conn.once('open', () => {
+conn.once("open", () => {
   gfs = new mongoose.mongo.GridFSBucket(conn.db, {
-    bucketName: 'uploads'
+    bucketName: "uploads",
   });
 });
 
@@ -50,7 +50,7 @@ function authFarmer(req) {
     if (req.user.role == "farmer") {
       return Promise.resolve(true);
     } else {
-      res.redirect("/buyer/dashboard");
+      return False;
     }
   }
   return Promise.resolve(false);
@@ -62,7 +62,7 @@ router.get("/", (req, res) => {
     else {
       req.flash(
         "error_msg",
-        "Please log out as a " + req.user.role + " to view this resource "
+        "Please log in as a farmer to view this resource "
       );
       res.render("farmerWelcome", { req: req });
     }
@@ -195,7 +195,7 @@ router.get("/createlisting", (req, res) => {
   authFarmer(req)
     .then((isAuthFarmer) => {
       if (isAuthFarmer) {
-        res.render("farmerCreateListing", { req: req, func: 'create' });
+        res.render("farmerCreateListing", { req: req, func: "create" });
       } else {
         req.flash(
           "error_msg",
@@ -217,8 +217,15 @@ router.get("/editlisting/:cropID", (req, res) => {
           name = crop.name;
           quantity = crop.quantity;
           price = crop.price;
-          res.render("farmerCreateListing", { req: req, func: 'edit', price:price, quantity: quantity, name: name, cropID: req.params.cropID});
-        })
+          res.render("farmerCreateListing", {
+            req: req,
+            func: "edit",
+            price: price,
+            quantity: quantity,
+            name: name,
+            cropID: req.params.cropID,
+          });
+        });
       } else {
         req.flash(
           "error_msg",
@@ -262,7 +269,7 @@ function handleCreateListingErrors(name, quantity, price, image) {
 }
 
 router.get("/upload_image/:cropID", (req, res) => {
-  res.render("uploadImage", { cropID: req.params.cropID, func: 'create' });
+  res.render("uploadImage", { cropID: req.params.cropID, func: "create" });
 });
 
 router.post("/upload_image/:cropID", upload.single("image"), (req, res) => {
@@ -270,30 +277,33 @@ router.post("/upload_image/:cropID", upload.single("image"), (req, res) => {
 });
 
 router.post("/editimage/:cropID", upload.single("image"), (req, res) => {
-  gfs.find({filename: req.params.cropID}).toArray((err, images) => {
-    if (!images[0] || images.length === 0){
+  gfs.find({ filename: req.params.cropID }).toArray((err, images) => {
+    if (!images[0] || images.length === 0) {
       res.redirect("/farmer/currentlistings/");
-    }
-    else{
-      if(images.length == 2){
+    } else {
+      if (images.length == 2) {
         var d1 = new Date(images[0].uploadDate);
-        var d2 = new Date(images[1].uploadDate)
+        var d2 = new Date(images[1].uploadDate);
         console.log("DATE 0: ", d1);
         console.log("DATE 1: ", d2);
-        if(d1 < d2){
-          gfs.delete(new mongoose.Types.ObjectId(images[0]._id)).then((err, image) => {
-            if(err){
-              return res.status(404).json({err: err});
-            }
-            res.redirect("/farmer/currentlistings/");
-          })
-        } else{
-          gfs.delete(new mongoose.Types.ObjectId(images[1]._id)).then((err, image) => {
-            if(err){
-              return res.status(404).json({err: err});
-            }
-            res.redirect("/farmer/currentlistings/");
-          })
+        if (d1 < d2) {
+          gfs
+            .delete(new mongoose.Types.ObjectId(images[0]._id))
+            .then((err, image) => {
+              if (err) {
+                return res.status(404).json({ err: err });
+              }
+              res.redirect("/farmer/currentlistings/");
+            });
+        } else {
+          gfs
+            .delete(new mongoose.Types.ObjectId(images[1]._id))
+            .then((err, image) => {
+              if (err) {
+                return res.status(404).json({ err: err });
+              }
+              res.redirect("/farmer/currentlistings/");
+            });
         }
       }
     }
@@ -321,7 +331,7 @@ router.post("/createlisting", async (req, res) => {
               name,
               price,
               quantity,
-              func: 'create',
+              func: "create",
               req: req,
             });
           } else {
@@ -378,7 +388,7 @@ router.post("/editlisting/:cropID", async (req, res) => {
               name,
               price,
               quantity,
-              func: 'edit',
+              func: "edit",
               cropID: req.params.cropID,
               req: req,
             });
@@ -389,17 +399,16 @@ router.post("/editlisting/:cropID", async (req, res) => {
               name: name,
               price: price,
               quantity: quantity,
-            }
+            };
             // console.log("IDDDDDD: ", req.params.cropID);
-            Crops
-              .findByIdAndUpdate(req.params.cropID, crop)
+            Crops.findByIdAndUpdate(req.params.cropID, crop)
               .then((crop, err) => {
-                if(err){
+                if (err) {
                   console.log("ERROR: ", err);
                   return;
                 }
                 console.log("I'M HEREEEEE: ");
-                res.render("uploadImage", {cropID: crop._id, func: 'edit'})
+                res.render("uploadImage", { cropID: crop._id, func: "edit" });
               })
               .catch((err) => console.error(err));
           }
@@ -538,18 +547,21 @@ router.get("/deleteCurrent/:cropID", (req, res) => {
               Crops.findByIdAndDelete(req.params.cropID)
                 .then((deletedCrop, obj) => {
                   // console.log("Deleted Crop", deletedCrop);
-                  gfs.find({filename: req.params.cropID}).toArray((err, image) => {
-                    if(!image[0] || image.length === 0){
-                      console.log("NO IMAGEEEEEE");
-                      return res.redirect("/farmer/currentlistings");
-                    }
-                    else{
-                      gfs.delete(new mongoose.Types.ObjectId(image[0]._id)).then((err, data) => {
-                        console.log("DELETED IMAGEEEEEE");
+                  gfs
+                    .find({ filename: req.params.cropID })
+                    .toArray((err, image) => {
+                      if (!image[0] || image.length === 0) {
+                        console.log("NO IMAGEEEEEE");
                         return res.redirect("/farmer/currentlistings");
-                      })
-                    }
-                  })
+                      } else {
+                        gfs
+                          .delete(new mongoose.Types.ObjectId(image[0]._id))
+                          .then((err, data) => {
+                            console.log("DELETED IMAGEEEEEE");
+                            return res.redirect("/farmer/currentlistings");
+                          });
+                      }
+                    });
                 })
                 .catch((delerr) => {
                   console.error(delerr);
@@ -573,7 +585,7 @@ router.get("/deleteCurrent/:cropID", (req, res) => {
 
 router.post("/upload", (req, res) => {
   setTimeout(() => {
-    console.log(req.body.image)
+    console.log(req.body.image);
   }, 2000);
   // var base64ToBuffer = new Buffer.from(req.image, "base64"); //Convert to base64
   // console.log("IOUJNBSFDKIJBVCS", base64ToBuffer);
