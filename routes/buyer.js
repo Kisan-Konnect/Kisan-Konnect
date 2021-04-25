@@ -29,10 +29,10 @@ router.get("/", (req, res) => {
         "error_msg",
         "Please log out as a " + req.user.role + " to view this resource "
       );
-      res.render("userWelcome", { req: req, role:"buyer" });
+      res.render("userWelcome", { req: req, role: "buyer" });
     }
   } else {
-    res.render("userWelcome", { req: req, role:'buyer' });
+    res.render("userWelcome", { req: req, role: "buyer" });
   }
 });
 
@@ -47,10 +47,10 @@ router.get("/login", (req, res) => {
         "error_msg",
         "Please log out as a " + req.user.role + " to view this resource "
       );
-      res.render("Login", { req: req, role: "buyer" });
+      res.render("login", { req: req, role: "buyer" });
     }
   } else {
-    res.render("Login", { req: req, role: "buyer" });
+    res.render("login", { req: req, role: "buyer" });
   }
 });
 

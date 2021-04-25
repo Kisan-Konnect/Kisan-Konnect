@@ -86,10 +86,10 @@ router.get("/", (req, res) => {
         "error_msg",
         "Please log in as a farmer to view this resource "
       );
-      res.render("userWelcome", { req: req, role: 'farmer' });
+      res.render("userWelcome", { req: req, role: "farmer" });
     }
   } else {
-    res.render("userWelcome", { req: req, role: 'farmer' });
+    res.render("userWelcome", { req: req, role: "farmer" });
   }
 });
 router.get("/login", (req, res) => {
@@ -101,10 +101,10 @@ router.get("/login", (req, res) => {
         "error_msg",
         "Please log out as a " + req.user.role + " to view this resource "
       );
-      res.render("Login", { req: req, role: "farmer" });
+      res.render("login", { req: req, role: "farmer" });
     }
   } else {
-    res.render("Login", { req: req, role: "farmer" });
+    res.render("login", { req: req, role: "farmer" });
   }
 });
 router.get("/register", (req, res) => {
@@ -319,7 +319,11 @@ function handleCreateListingErrors(name, quantity, price, image) {
 }
 
 router.get("/upload_image/:cropID", (req, res) => {
-  res.render("uploadImage", { cropID: req.params.cropID, func: "create", req:req });
+  res.render("uploadImage", {
+    cropID: req.params.cropID,
+    func: "create",
+    req: req,
+  });
 });
 router.post("/upload_image/:cropID", upload.single("image"), (req, res) => {
   res.redirect("/farmer/currentlistings");
@@ -438,7 +442,11 @@ router.post("/editlisting/:cropID", async (req, res) => {
                   console.log("ERROR: ", err);
                   return;
                 }
-                res.render("uploadImage", { cropID: crop._id, func: "edit", req: req });
+                res.render("uploadImage", {
+                  cropID: crop._id,
+                  func: "edit",
+                  req: req,
+                });
               })
               .catch((err) => console.error(err));
           }
