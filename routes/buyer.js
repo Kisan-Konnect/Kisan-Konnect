@@ -440,7 +440,7 @@ router.post('/raisecomplaint/:cropID', (req, res) => {
               cropID: cropID,
               complainerID: complainerID,
               complainerRole: complainerRole,
-              complainAgainstID: inprog.buyerID,
+              complainAgainstID: inprog.farmerID,
             })
             complaint.save().then(() => {
               res.redirect("/buyer/dashboard");

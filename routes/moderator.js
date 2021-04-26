@@ -4,12 +4,20 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const passport = require("passport");
 const Crops = require("../models/Crop");
-const Mods = require("../models/User");
+const User = require("../models/User");
 const Transaction = require("../models/Transaction");
 const InProgress = require("../models/InProgress");
 const { find } = require("../models/Crop");
 var Grid = require("gridfs-stream");
+const Complaints = require("../models/Complaints");
 const conn = mongoose.connection;
+
+var gfs;
+conn.once("open", () => {
+  gfs = new mongoose.mongo.GridFSBucket(conn.db, {
+    bucketName: "uploads",
+  });
+});
 
 function authMod(req) {
   if (req.isAuthenticated()) {
@@ -36,7 +44,7 @@ function redirects(req, res){
   else {
     req.flash(
       "error_msg",
-      "Please log in as a Buyer to view this resource "
+      "Please log in as a Moderator to view this resource "
     );
     res.redirect("/moderator/login")
   }
@@ -105,7 +113,7 @@ router.post("/register", (req, res) => {
   const password2 = req.body.password2.toString();
   const number = req.body.number.toString();
   const address = req.body.address.toString();
-  console.log("ADDRESSSS", address);
+  // console.log("ADDRESSSS", address);
   handleRegisterErrors(name, password, password2, number, address).then(
     (errors) => {
       if (errors.length > 0) {
@@ -121,7 +129,7 @@ router.post("/register", (req, res) => {
         });
       } else {
         var number_query = { number: number.toString(), role: "moderator" };
-        Mods.findOne(number_query, (err, obj) => {
+        User.findOne(number_query, (err, obj) => {
           if (obj) {
             console.log(obj);
             // If Found, Display error Message
@@ -136,7 +144,7 @@ router.post("/register", (req, res) => {
               role: "moderator",
             });
           } else {
-            const newMod = Mods({
+            const newMod = User({
               name: name,
               password: password,
               address: address,
@@ -181,5 +189,172 @@ router.get("/logout", (req, res) => {
   req.flash("success_msg", "You are logged out");
   res.redirect("/moderator/login");
 });
+
+router.get("/dashboard", (req, res) => {
+  getComplaints().then((complaints) => {
+    console.log(complaints);
+    res.render("modViewComplaints", {req: req, complaints: complaints});
+  })
+})
+function getImg(id) {
+  var filename = id.toString();
+  return new Promise((resolve, reject) => {
+    gfs.find({ filename: filename }).toArray((gfserr, files) => {
+      if (!files[0] || files.length === 0) {
+        console.log("FILE NOT FOUND");
+        resolve(null);
+      } else {
+        const readStream = gfs.openDownloadStreamByName(files[0].filename);
+        var img = "";
+        readStream.on("data", (chunk) => {
+          img += chunk.toString("base64");
+        });
+        readStream.on("end", () => {
+          resolve(img);
+        });
+      }
+    });
+  });
+}
+
+function findListings(Model, Model1, uid = null) {
+  return new Promise((resolve, reject) => {
+    var a = [];
+    Model.find({ available: true }).then(async (crops) => {
+      for (i = 0; i < crops.length; i++) {
+        var doc = crops[i];
+        var farmer = await Model1.findById(doc.farmerID);
+        var newdoc = {
+          _id: doc._id,
+          name: doc.name,
+          price: doc.price,
+          quantity: doc.quantity,
+          farmerID: doc.farmerID,
+          date: doc.date,
+          __v: 0,
+        };
+        newdoc.farmerName = farmer.name;
+        await getImg(newdoc._id)
+          .then((image) => {
+            newdoc.image = image;
+            a.push(newdoc);
+          })
+          .catch((getimgerr) => console.error(getimgerr));
+      }
+      resolve(a);
+    });
+  });
+}
+
+function getComplaints() {
+  return new Promise((resolve, reject) => {
+    var comps = [];
+    Complaints.find().then(async (complaints) => {
+      for(i = 0; i < complaints.length; i++){
+        var crop = await Crops.findById(complaints[i].cropID);
+        var complainant = await User.findById(complaints[i].complainerID);
+        var complainee = await User.findById(complaints[i].complainAgainstID);
+        await getImg(crop._id)
+          .then((image) => {
+            crop1 = {
+              available: crop.available,
+              _id: crop._id,
+              name: crop.name,
+              price: crop.price,
+              quantity: crop.quantity,
+              farmerID: crop.farmerID,
+              date: crop.date,
+              __v: crop.__v,
+              image: image,
+            };
+            var temp = {
+              complaint: complaints[i],
+              crop: crop1,
+              complainant: complainant,
+              complainee: complainee,
+            }
+            comps.push(temp);
+          })
+          .catch((getimgerr) => console.error(getimgerr));
+      }
+      resolve(comps)
+    }).catch((finderr)=> console.error(finderr))
+  })
+}
+
+
+router.get("/viewcomplaints", (req, res) => {
+  authMod(req).then((isAuthMod) => {
+    if(isAuthMod) {
+      getComplaints().then((complaints) => {
+        // console.log("COMPLAINTSSSSS: ", complaints);
+        res.render("modViewComplaints", {req: req, complaints: complaints});
+      })
+    }else{
+      res.redirect('/moderator/login');
+    }
+  }).catch((autherr)=>{console.error(autherr)})
+})
+
+router.get("/dismiss/:compID", (req, res) => {
+  authMod(req).then((isAuthMod) => {
+    if(isAuthMod){
+      Complaints.findByIdAndDelete(req.params.compID).then((comp) => {
+        console.log("deleted", comp, req.params.compID);
+        res.redirect("/moderator/viewcomplaints");
+      }).catch((err) => {
+        console.error(err);
+        res.redirect("/moderator/viewcomplaints");
+      })
+    }
+    else{
+      req.flash(
+        "error_msg",
+        "Please log in as a Moderator to view this resource "
+      );
+      res.redirect("/moderator/login");
+    }
+  }).catch((err) => {
+    console.error(err);
+    res.redirect("/moderator/viewcomplaints");
+  })
+})
+
+router.get("/warn/:compID", (req, res) => {
+  authMod(req).then((isAuthMod) => {
+    if(isAuthMod){
+      Complaints.findByIdAndDelete(req.params.compID).then((comp) => {
+        User.findById(comp.complainAgainstID).then((user) => {
+          var warn = 1;
+          if(user.warnings){
+            warn += user.warnings;
+          }
+          User.findByIdAndUpdate(comp.complainAgainstID, {warnings:warn}).then(() => {
+            res.redirect("/moderator/viewcomplaints");
+          }).catch((err) => {
+            console.error(err)
+            res.redirect("/moderator/viewcomplaints");
+          })
+        }).catch((err) => {
+          console.error(err)
+          res.redirect("/moderator/viewcomplaints");
+        })
+      }).catch((err) => {
+        console.error(err)
+        res.redirect("/moderator/viewcomplaints");
+      })
+    }
+    else{
+      req.flash(
+        "error_msg",
+        "Please log in as a Moderator to view this resource "
+      );
+      res.redirect("/moderator/login");
+    }
+  }).catch((err) => {
+    console.error(err);
+    res.redirect("/moderator/viewcomplaints");
+  })
+})
 
 module.exports = router;

@@ -20,6 +20,12 @@ module.exports = function (passport) {
                 message: "That Phone Number is not registered",
               });
             } else {
+              // Check for banned Users
+              if (user.warnings >= 3) {
+                return done(null, false, {
+                  message: "This Farmer has been BANNED!",
+                });
+              }
               //Match Pasword
               bcrypt.compare(password, user.password, (err, isMatch) => {
                 if (err) {
@@ -53,6 +59,12 @@ module.exports = function (passport) {
                 message: "That Phone Number is not registered",
               });
             } else {
+              // Check for banned Users
+              if (user.warnings >= 3) {
+                return done(null, false, {
+                  message: "This Buyer has been BANNED!",
+                });
+              }
               //Match Pasword
               bcrypt.compare(password, user.password, (err, isMatch) => {
                 if (err) {
