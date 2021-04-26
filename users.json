@@ -1,0 +1,27 @@
+[{
+  "_id": {
+    "$oid": "6085ce5210fc814fe0851396"
+  },
+  "role": "buyer",
+  "name": "Sid",
+  "password": "$2a$10$JGgn4.i9d3uBLZlwQQxoSeHlSaQwAaQSyndEYSSXwYDsrqFg5Mwxq",
+  "address": "B255, BITS Pilani, Thumukunta, Shamirpeth",
+  "number": "1212121212",
+  "date": {
+    "$date": "2021-04-25T20:17:22.606Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "role": "farmer",
+  "name": "Vikram",
+  "number": "1212121212",
+  "password": "$2a$10$5EuLcrTpYBC5RqzlcFGE1.NUu5MMlZzA1pU7BWDj2NNNhIGf0jcvi",
+  "address": "250 Budh, BITS Pilani, Thumukunta, Hyd",
+  "date": {
+    "$date": "2021-04-25T21:07:23.538Z"
+  },
+  "__v": 0
+}]

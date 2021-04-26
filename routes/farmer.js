@@ -7,6 +7,7 @@ const Crops = require("../models/Crop");
 const Transaction = require("../models/Transaction");
 const InProgress = require("../models/InProgress");
 const Farmers = require("../models/User");
+const Complaints = require("../models/Complaints");
 
 const bodyParser = require("body-parser");
 const path = require("path");
@@ -45,8 +46,8 @@ conn.once("open", () => {
   });
 });
 
-function getImg(doc) {
-  var filename = doc._id.toString();
+function getImg(id) {
+  var filename = id.toString();
   var buffer = "";
   return new Promise((resolve, reject) => {
     gfs.find({ filename: filename }).toArray((gfserr, files) => {
@@ -77,17 +78,23 @@ function authFarmer(req) {
   }
   return Promise.resolve(false);
 }
-router.get("/", (req, res) => {
-  if (req.isAuthenticated()) {
-    if (req.user.role == "farmer") res.redirect("/farmer/dashboard");
-    else if (req.user.role == "buyer") res.redirect("/buyer/dashboard");
+
+function redirects(req, res) {
+  if (req.user.role == "buyer") res.redirect("/buyer/dashboard");
+    else if (req.user.role == "moderator") res.redirect("/moderator/dashboard");
     else {
       req.flash(
         "error_msg",
-        "Please log in as a farmer to view this resource "
+        "Please log in as a Farmer to view this resource "
       );
-      res.render("userWelcome", { req: req, role: "farmer" });
+      res.redirect("/farmer/login");
     }
+}
+
+router.get("/", (req, res) => {
+  if (req.isAuthenticated()) {
+    if (req.user.role == "farmer") res.redirect("/farmer/dashboard");
+    else redirects(req, res);
   } else {
     res.render("userWelcome", { req: req, role: "farmer" });
   }
@@ -95,14 +102,7 @@ router.get("/", (req, res) => {
 router.get("/login", (req, res) => {
   if (req.isAuthenticated()) {
     if (req.user.role == "farmer") res.redirect("/farmer/dashboard");
-    else if (req.user.role == "buyer") res.redirect("/buyer/dashboard");
-    else {
-      req.flash(
-        "error_msg",
-        "Please log out as a " + req.user.role + " to view this resource "
-      );
-      res.render("login", { req: req, role: "farmer" });
-    }
+    else redirects(req, res);
   } else {
     res.render("login", { req: req, role: "farmer" });
   }
@@ -110,14 +110,7 @@ router.get("/login", (req, res) => {
 router.get("/register", (req, res) => {
   if (req.isAuthenticated()) {
     if (req.user.role == "farmer") res.redirect("/farmer/dashboard");
-    else if (req.user.role == "buyer") res.redirect("/buyer/dashboard");
-    else {
-      req.flash(
-        "error_msg",
-        "Please log out as a " + req.user.role + " to view this resource "
-      );
-      res.render("register", { req: req, role: "farmer" });
-    }
+    else redirects(req, res);
   } else {
     res.render("register", { req: req, role: "farmer" });
   }
@@ -463,47 +456,44 @@ router.post("/editlisting/:cropID", async (req, res) => {
       console.error(autherr);
     });
 });
-async function findListingsOfUser(Model, uid, Model1) {
+async function findListingsOfUser(Model, uid) {
   return new Promise((resolve, reject) => {
     a = [];
     var result;
-    Model.find().then(async (docs) => {
+    var query = {farmerID: uid};
+    Model.find(query).then(async (docs) => {
       for (i = 0; i < docs.length; i++) {
         doc = docs[i];
-        let crop;
-        try {
-          crop = await Crops.findById(doc.cropID);
-        } catch (err) {
-          console.error(err);
-        }
-        if (crop) {
-          let buyer = await Model1.findById(crop.farmerID);
+        if (doc) {
+          let buyer = await Farmers.findById(doc.farmerID);
           var newdoc;
           if (Model == InProgress) {
             newdoc = {
               _id: doc._id,
-              name: crop.name,
+              name: doc.name,
               price: doc.price,
-              farmerID: crop.farmerID,
+              farmerID: doc.farmerID,
               buyerID: doc.buyerID,
               quantity: doc.quantity,
               date: doc.date,
               sent: doc.sent,
               buyerName: buyer.name,
+              cropID: doc.cropID,
             };
           } else {
             newdoc = {
-              _d: doc._id,
-              name: crop.name,
+              _id: doc._id,
+              name: doc.name,
               price: doc.price,
-              farmerID: crop.farmerID,
+              farmerID: doc.farmerID,
               buyerID: doc.buyerID,
               quantity: doc.quantity,
               date: doc.date,
               buyerName: buyer.name,
+              cropID: doc.cropID,
             };
           }
-          await getImg(crop)
+          await getImg(doc.cropID)
             .then((image) => {
               newdoc.image = image;
               a.push(newdoc);
@@ -519,7 +509,7 @@ router.get("/dashboard", (req, res) => {
   authFarmer(req)
     .then((isAuthFarmer) => {
       if (isAuthFarmer) {
-        findListingsOfUser(InProgress, req.user._id, Farmers)
+        findListingsOfUser(InProgress, req.user._id,)
           .then((crops) => {
             res.render("farmer", {
               crops: crops,
@@ -541,7 +531,7 @@ router.get("/history", (req, res) => {
   authFarmer(req)
     .then((isAuthFarmer) => {
       if (isAuthFarmer) {
-        findListingsOfUser(Transaction, req.user._id, Farmers)
+        findListingsOfUser(Transaction, req.user._id)
           .then((crops) => {
             res.render("farmer", {
               crops: crops,
@@ -557,14 +547,14 @@ router.get("/history", (req, res) => {
     })
     .catch((autherr) => console.error(autherr));
 });
-async function getCurrentListings(Model, uid) {
+async function getCurrentListings(uid) {
   var query = { farmerID: uid, available: true };
   return new Promise((resolve, reject) => {
     var a = [];
-    Model.find(query).then(async (docs, err) => {
+    Crops.find(query).then(async (docs, err) => {
       for (i = 0; i < docs.length; i++) {
         var newdoc = docs[i];
-        await getImg(newdoc)
+        await getImg(newdoc._id)
           .then((image) => {
             newdoc.image = image;
             a.push(newdoc);
@@ -579,7 +569,7 @@ router.get("/currentlistings", (req, res) => {
   authFarmer(req)
     .then((isAuthFarmer) => {
       if (isAuthFarmer) {
-        getCurrentListings(Crops, req.user._id).then((crops) => {
+        getCurrentListings(req.user._id).then((crops) => {
           res.render("farmer", {
             req: req,
             crops: crops,
@@ -639,6 +629,77 @@ router.get("/deleteCurrent/:cropID", (req, res) => {
     })
     .catch((autherr) => console.error(autherr));
 });
+
+router.get('/raisecomplaint/:cropID', (req, res) => {
+  authFarmer(req)
+    .then((isAuthFarmer) => {
+      if (isAuthFarmer) {
+        var query = {cropID: req.params.cropID}
+        InProgress.findOne(query)
+          .then((inprog) => {
+            if(!inprog){
+              res.redirect("/farmer/dashboard");
+            }
+            else if (inprog.farmerID.toString() == req.user._id.toString()){
+                Farmers.findById(inprog.buyerID).then((buyer) => {
+                  res.render("raiseComplaint", {req:req, user:buyer, crop:inprog});
+              })
+            }
+            else{
+              console.log("farmer is auth but not crop", inprog, req.user);
+              res.redirect("/farmer/dashboard")
+            }
+          }).catch((err) => {
+            console.error(err)
+            res.redirect("/farmer/dashboard")
+          });
+      }
+      else{
+        res.redirect("/farmer/login")
+      }
+    }).catch((autherr) => console.error(autherr));
+})
+
+router.post('/raisecomplaint/:cropID', (req, res) => {
+  authFarmer(req)
+    .then((isAuthFarmer) => {
+      if (isAuthFarmer) {
+        var reason = req.body.complaint.toString();
+        var cropID = req.params.cropID;
+        var complainerID = req.user._id;
+        var complainerRole = req.user.role;
+        InProgress.findOne({cropID: req.params.cropID}).then((inprog)=>{
+          if(inprog){
+            var complaint = new Complaints({
+              reason: reason,
+              cropID: cropID,
+              complainerID: complainerID,
+              complainerRole: complainerRole,
+              complainAgainstID: inprog.buyerID,
+            })
+            console.log("COMPLAINTTTTT", complaint)
+            complaint.save().then(() => {
+              res.redirect("/farmer/dashboard");
+            }).catch((err) => {
+              console.error(err);
+              res.redirect("/farmer/dashboard");
+            })
+          }
+          else{
+            console.log("Can't find Bought Crop");
+            res.redirect("/farmer/dashboard");
+          }
+        }) .catch((err) => {
+          console.error(err);
+          res.redirect("/farmer/dashboard");
+        })       
+      }else{
+        res.redirect("/farmer/login")
+      }
+    }).catch((autherr) => console.error(autherr));
+  
+})
+
 router.get("/sent/:cropID", (req, res) => {
   authFarmer(req)
     .then((isAuthFarmer) => {

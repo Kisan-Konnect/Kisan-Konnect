@@ -9,6 +9,7 @@ const Transaction = require("../models/Transaction");
 const InProgress = require("../models/InProgress");
 const { find } = require("../models/Crop");
 var Grid = require("gridfs-stream");
+const Complaints = require("../models/Complaints");
 const conn = mongoose.connection;
 
 function authBuyer(req) {
@@ -20,17 +21,21 @@ function authBuyer(req) {
   return Promise.resolve(false);
 }
 
+function nonBuyerRedirects(req, res){
+  if (req.user.role == "farmer") res.redirect("/farmer/dashboard");
+  else if (req.user.role == "mod") res.redirect("/moderator/dashboard");
+  else {
+    req.flash(
+      "error_msg",
+      "Please log in as a Buyer to view this resource "
+    );
+    res.redirect("/buyer/login")
+  }
+}
 router.get("/", (req, res) => {
   if (req.isAuthenticated()) {
     if (req.user.role == "buyer") res.redirect("/buyer/dashboard");
-    else if (req.user.role == "farmer") res.redirect("/farmer/dashboard");
-    else {
-      req.flash(
-        "error_msg",
-        "Please log out as a " + req.user.role + " to view this resource "
-      );
-      res.render("userWelcome", { req: req, role: "buyer" });
-    }
+    else nonBuyerRedirects(req, res);
   } else {
     res.render("userWelcome", { req: req, role: "buyer" });
   }
@@ -40,15 +45,8 @@ router.get("/", (req, res) => {
 router.get("/login", (req, res) => {
   if (req.isAuthenticated()) {
     if (req.user.role == "buyer") {
-      res.redirect("buyer/dashboard");
-    } else if (req.user.role == "farmer") res.redirect("/farmer/dashboard");
-    else {
-      req.flash(
-        "error_msg",
-        "Please log out as a " + req.user.role + " to view this resource "
-      );
-      res.render("login", { req: req, role: "buyer" });
-    }
+      res.redirect("/buyer/dashboard");
+    } else nonBuyerRedirects(req, res);
   } else {
     res.render("login", { req: req, role: "buyer" });
   }
@@ -58,15 +56,8 @@ router.get("/login", (req, res) => {
 router.get("/register", (req, res) => {
   if (req.isAuthenticated()) {
     if (req.user.role == "buyer") {
-      res.redirect("buyer/dashboard");
-    } else if (req.user.role == "farmer") res.redirect("/farmer/dashboard");
-    else {
-      req.flash(
-        "error_msg",
-        "Please log out as a Buyer to view this resource "
-      );
-      res.render("register", { req: req, role: "buyer" });
-    }
+      res.redirect("/buyer/dashboard");
+    } else nonBuyerRedirects(req, res);
   } else {
     res.render("register", { req: req, role: "buyer" });
   }
@@ -112,7 +103,7 @@ router.post("/register", (req, res) => {
   const password2 = req.body.password2.toString();
   const number = req.body.number.toString();
   const address = req.body.address.toString();
-  console.log("ADDRESSSS", address);
+  //console.log("ADDRESSSS", address);
   handleRegisterErrors(name, password, password2, number, address).then(
     (errors) => {
       if (errors.length > 0) {
@@ -196,9 +187,8 @@ conn.once("open", () => {
   });
 });
 
-function getImg(doc) {
-  var filename = doc._id.toString();
-  var buffer = "";
+function getImg(id) {
+  var filename = id.toString();
   return new Promise((resolve, reject) => {
     gfs.find({ filename: filename }).toArray((gfserr, files) => {
       if (!files[0] || files.length === 0) {
@@ -234,7 +224,7 @@ function findListings(Model, Model1, uid = null) {
           __v: 0,
         };
         newdoc.farmerName = farmer.name;
-        await getImg(newdoc)
+        await getImg(newdoc._id)
           .then((image) => {
             newdoc.image = image;
             a.push(newdoc);
@@ -258,11 +248,7 @@ router.get("/listing", (req, res) => {
           });
         })
         .catch((err) => console.error(err));
-    } else if (req.user.role == "farmer") res.redirect("/farmer/dashboard");
-    else {
-      req.flash("error_msg", "Please log in to view this resource ");
-      res.redirect("/buyer/login");
-    }
+    } else nonBuyerRedirects(req, res);
   } else {
     req.flash("error_msg", "Please log in to view this resource ");
     res.redirect("/buyer/login");
@@ -272,40 +258,40 @@ router.get("/listing", (req, res) => {
 async function findListingsOfUser(Model, uid, Model1) {
   return new Promise((resolve, reject) => {
     a = [];
-    var result;
     var query = { buyerID: uid };
     Model.find(query).then(async (docs) => {
       for (i = 0; i < docs.length; i++) {
         doc = docs[i];
         console.log(doc);
-        let crop = await Crops.findById(doc.cropID);
-        let farmer = await Model1.findById(crop.farmerID);
+        let farmer = await Model1.findById(doc.farmerID);
         var newdoc;
         if (Model == InProgress) {
           newdoc = {
             _id: doc._id,
-            name: crop.name,
+            name: doc.name,
             price: doc.price,
             farmerName: farmer.name,
-            farmerID: crop.farmerID,
+            farmerID: doc.farmerID,
             buyerID: doc.buyerID,
             quantity: doc.quantity,
             date: doc.date,
             sent: doc.sent,
+            cropID: doc.cropID,
           };
         } else {
           newdoc = {
             _id: doc._id,
-            name: crop.name,
+            name: doc.name,
             price: doc.price,
             farmerName: farmer.name,
-            farmerID: crop.farmerID,
+            farmerID: doc.farmerID,
             buyerID: doc.buyerID,
             quantity: doc.quantity,
             date: doc.date,
+            cropID: doc.cropID,
           };
         }
-        await getImg(crop)
+        await getImg(newdoc.cropID)
           .then((image) => {
             newdoc.image = image;
             a.push(newdoc);
@@ -316,60 +302,37 @@ async function findListingsOfUser(Model, uid, Model1) {
     });
   });
 }
-router.get("/dashboard", (req, res) => {
+
+function handleRender(req, res, title, Model){
   if (req.isAuthenticated()) {
     if (req.user.role == "buyer") {
       //QUERY IN PROGRESS
-      findListingsOfUser(InProgress, req.user._id, Buyers)
+      findListingsOfUser(Model, req.user._id, Buyers)
         .then((crops) => {
           // console.log(crops);
           res.render("buyer", {
             crops: crops,
             req: req,
-            title: "Dashboard",
+            title: title,
           });
         })
         .catch((err) => console.error(err));
 
       //make into html
       //RENDER
-    } else if (req.user.role == "farmer") res.redirect("/farmer/dashboard");
-    else {
-      req.flash("error_msg", "Please log in to view this resource ");
-      res.redirect("/buyer/login");
-    }
+    } else nonBuyerRedirects(req, res);
   } else {
     req.flash("error_msg", "Please log in to view this resource ");
     res.redirect("/buyer/login");
   }
+}
+
+router.get("/dashboard", (req, res) => {
+  handleRender(req, res, "Dashboard", InProgress);
 });
 
 router.get("/history", (req, res) => {
-  if (req.isAuthenticated()) {
-    if (req.user.role == "buyer") {
-      //QUERY IN PROGRESS
-      findListingsOfUser(Transaction, req.user._id, Buyers)
-        .then((crops) => {
-          //console.log(crops);
-          res.render("buyer", {
-            crops: crops,
-            req: req,
-            title: "History",
-          });
-        })
-        .catch((err) => console.error(err));
-
-      //make into html
-      //RENDER
-    } else if (req.user.role == "farmer") res.redirect("/farmer/dashboard");
-    else {
-      req.flash("error_msg", "Please log in to view this resource ");
-      res.redirect("/buyer/login");
-    }
-  } else {
-    req.flash("error_msg", "Please log in to view this resource ");
-    res.redirect("/buyer/login");
-  }
+  handleRender(req, res, "History", Transaction);
 });
 
 router.get("/buy/:trxID", (req, res) => {
@@ -380,11 +343,13 @@ router.get("/buy/:trxID", (req, res) => {
         available: false,
       }).then((crop) => {
         var inProgress = new InProgress({
+          name: crop.name,
           cropID: crop._id,
           buyerID: req.user._id,
           quantity: crop.quantity,
           price: crop.price,
           sent: false,
+          farmerID: crop.farmerID,
         });
         inProgress
           .save()
@@ -395,16 +360,7 @@ router.get("/buy/:trxID", (req, res) => {
             console.error(err);
           });
       });
-    } else if (req.user.role == "farmer") res.redirect("/farmer/dashboard");
-    else {
-      req.flash(
-        "error_msg",
-        "Please log out as " +
-          req.user.role +
-          " and login as buyer to view this resource "
-      );
-      res.redirect("/buyer/login");
-    }
+    } else nonBuyerRedirects(req, res);
   } else {
     req.flash("error_msg", "Please log in to view this resource ");
     res.redirect("/buyer/login");
@@ -416,10 +372,12 @@ router.get("/receive/:trxID", (req, res) => {
       //QUERY AVAIL
       InProgress.findByIdAndDelete(req.params.trxID).then((crop) => {
         var transaction = new Transaction({
+          name: crop.name,
           cropID: crop.cropID,
           buyerID: crop.buyerID,
           quantity: crop.quantity,
           price: crop.price,
+          farmerID: crop.farmerID,
         });
         transaction
           .save()
@@ -430,19 +388,80 @@ router.get("/receive/:trxID", (req, res) => {
             console.error(err);
           });
       });
-    } else if (req.user.role == "farmer") res.redirect("/farmer/dashboard");
-    else {
-      req.flash(
-        "error_msg",
-        "Please log out as " +
-          req.user.role +
-          " and login as buyer to view this resource "
-      );
-      res.redirect("/buyer/login");
-    }
+    } else nonBuyerRedirects(req, res);
   } else {
     req.flash("error_msg", "Please log in to view this resource ");
     res.redirect("/buyer/login");
   }
 });
+
+router.get('/raisecomplaint/:cropID', (req, res) => {
+  authBuyer(req)
+    .then((isAuthBuyer) => {
+      if (isAuthBuyer) {
+        var query = {cropID: req.params.cropID}
+        InProgress.findOne(query)
+          .then((inprog) => {
+            if(!inprog){
+              res.redirect("/buyer/dashboard");
+            }
+            else if (inprog.buyerID.toString() == req.user._id.toString()){
+                Buyers.findById(inprog.farmerID).then((farmer) => {
+                  res.render("raiseComplaint", {req:req, user:farmer, crop:inprog});
+              })
+            }
+            else{
+              console.log("buyer is auth but not crop", inprog, req.user);
+              res.redirect("/farmer/dashboard")
+            }
+          }).catch((err) => {
+            console.error(err)
+            res.redirect("/buyer/dashboard")
+          });
+      }
+      else{
+        res.redirect("/buyer/login")
+      }
+    }).catch((autherr) => console.error(autherr));
+})
+
+router.post('/raisecomplaint/:cropID', (req, res) => {
+  authBuyer(req)
+    .then((isAuthBuyer) => {
+      if (isAuthBuyer) {
+        var reason = req.body.complaint.toString();
+        var cropID = req.params.cropID;
+        var complainerID = req.user._id;
+        var complainerRole = req.user.role;
+        InProgress.findOne({cropID: req.params.cropID}).then((inprog)=>{
+          if(inprog){
+            var complaint = new Complaints({
+              reason: reason,
+              cropID: cropID,
+              complainerID: complainerID,
+              complainerRole: complainerRole,
+              complainAgainstID: inprog.buyerID,
+            })
+            complaint.save().then(() => {
+              res.redirect("/buyer/dashboard");
+            }).catch((err) => {
+              console.error(err);
+              res.redirect("/buyer/dashboard");
+            })
+          }
+          else{
+            console.log("Can't find Bought Crop");
+            res.redirect("/farmer/dashboard");
+          }
+        }) .catch((err) => {
+          console.error(err);
+          res.redirect("/buyer/dashboard");
+        })       
+      }else{
+        res.redirect("/buyer/login")
+      }
+    }).catch((autherr) => console.error(autherr));
+  
+})
+
 module.exports = router;

@@ -1,12 +1,21 @@
-var InProgressCrop;
+var InProgress;
 
 const mongoose = require("mongoose");
 
 const InProgressCropSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
   buyerID: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
+  },
+  farmerID: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: "User",
   },
   cropID: {
     type: mongoose.Schema.Types.ObjectId,
@@ -31,5 +40,5 @@ const InProgressCropSchema = new mongoose.Schema({
   },
 });
 
-InProgressCrop = mongoose.model("InProgress", InProgressCropSchema);
-module.exports = InProgressCrop;
+InProgress = mongoose.model("InProgress", InProgressCropSchema);
+module.exports = InProgress;

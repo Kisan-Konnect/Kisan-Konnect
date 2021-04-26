@@ -1,0 +1,226 @@
+[{
+  "_id": {
+    "$oid": "6085daaf725bc5246cfdec27"
+  },
+  "available": 1,
+  "name": "Pistachio",
+  "price": 184,
+  "quantity": 150,
+  "farmerID": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "date": {
+    "$date": "2021-04-25T21:10:07.633Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6085dacb725bc5246cfdec2a"
+  },
+  "available": 1,
+  "name": "Apples",
+  "price": 125,
+  "quantity": 566,
+  "farmerID": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "date": {
+    "$date": "2021-04-25T21:10:35.861Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6085dade725bc5246cfdec2d"
+  },
+  "available": 1,
+  "name": "Onion",
+  "price": 105,
+  "quantity": 654,
+  "farmerID": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "date": {
+    "$date": "2021-04-25T21:10:54.205Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6085daf0725bc5246cfdec30"
+  },
+  "available": 1,
+  "name": "Chilli",
+  "price": 150,
+  "quantity": 685,
+  "farmerID": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "date": {
+    "$date": "2021-04-25T21:11:12.491Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6085db04725bc5246cfdec33"
+  },
+  "available": 1,
+  "name": "Peas",
+  "price": 65,
+  "quantity": 485,
+  "farmerID": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "date": {
+    "$date": "2021-04-25T21:11:32.061Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6085dba8725bc5246cfdec36"
+  },
+  "available": 1,
+  "name": "Whear",
+  "price": 50,
+  "quantity": 500,
+  "farmerID": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "date": {
+    "$date": "2021-04-25T21:14:16.300Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6085dbbc725bc5246cfdec3a"
+  },
+  "available": 1,
+  "name": "Beans",
+  "price": 80,
+  "quantity": 1000,
+  "farmerID": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "date": {
+    "$date": "2021-04-25T21:14:36.934Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6085dbd0725bc5246cfdec3d"
+  },
+  "available": 1,
+  "name": "Mango",
+  "price": 150,
+  "quantity": 600,
+  "farmerID": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "date": {
+    "$date": "2021-04-25T21:14:56.431Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6085dc02725bc5246cfdec40"
+  },
+  "available": 1,
+  "name": "Banana",
+  "price": 30,
+  "quantity": 100,
+  "farmerID": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "date": {
+    "$date": "2021-04-25T21:15:46.485Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6085dc19725bc5246cfdec43"
+  },
+  "available": 1,
+  "name": "Cauliflower",
+  "price": 16,
+  "quantity": 1500,
+  "farmerID": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "date": {
+    "$date": "2021-04-25T21:16:09.469Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6085dc33725bc5246cfdec46"
+  },
+  "available": 1,
+  "name": "Grapes",
+  "price": 125,
+  "quantity": 1620,
+  "farmerID": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "date": {
+    "$date": "2021-04-25T21:16:35.940Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6085dc52725bc5246cfdec4a"
+  },
+  "available": 1,
+  "name": "Wheat",
+  "price": 90,
+  "quantity": 1320,
+  "farmerID": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "date": {
+    "$date": "2021-04-25T21:17:06.954Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6085ddab725bc5246cfdec4d"
+  },
+  "available": 1,
+  "name": "Tomato",
+  "price": 60,
+  "quantity": 120,
+  "farmerID": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "date": {
+    "$date": "2021-04-25T21:22:51.581Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6085ddc7725bc5246cfdec50"
+  },
+  "available": 1,
+  "name": "Potato",
+  "price": 78,
+  "quantity": 50,
+  "farmerID": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "date": {
+    "$date": "2021-04-25T21:23:19.642Z"
+  },
+  "__v": 0
+},{
+  "_id": {
+    "$oid": "6085de1b725bc5246cfdec56"
+  },
+  "available": 1,
+  "name": "Pineapple",
+  "price": 46,
+  "quantity": 50,
+  "farmerID": {
+    "$oid": "6085da0b725bc5246cfdec20"
+  },
+  "date": {
+    "$date": "2021-04-25T21:24:43.323Z"
+  },
+  "__v": 0
+}]

@@ -69,7 +69,7 @@ app.use((req, res, next) => {
 app.use("/", require("./routes/index"));
 app.use("/farmer", require("./routes/farmer"));
 app.use("/buyer", require("./routes/buyer"));
-//app.use("/moderator", require("./routes/moderator"));
+app.use("/moderator", require("./routes/moderator"));
 
 const PORT = process.env.PORT || 5000;
 

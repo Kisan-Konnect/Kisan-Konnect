@@ -6,9 +6,7 @@
         <i class="fas fa-user-plus"></i> Register
       </h1>
       <%- include ("./partials/messages") %>
-      <% var link; %>
-      <% if(role == 'farmer'){link = "/farmer/register"} else if(role == 'buyer') {link = "/buyer/register";} %>
-      <form action="<%= link %> " method="POST">
+      <form action="/<%= role %>/register " method="POST">
         <div class="form-group">
           <label for="name">Name</label>
           <input
@@ -67,9 +65,7 @@
           Register
         </button>
       </form>
-      <% var link1; %>
-      <% if(role == 'farmer'){link1 = "/farmer/login"} else if(role == 'buyer') {link1 = "/buyer/login";} %>
-      <p class="lead mt-4">Have An Account? <a href="<%= link1 %>">Login</a></p>
+      <p class="lead mt-4">Have An Account? <a href="/<%= role %>/login">Login</a></p>
     </div>
   </div>
 </div>

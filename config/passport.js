@@ -71,6 +71,39 @@ module.exports = function (passport) {
     )
   );
 
+  passport.use(
+    "modLocal",
+    new LocalStrategy(
+      {
+        usernameField: "number",
+      },
+      (number, password, done) => {
+        //Match User
+        User.findOne({ number: number, role: "moderator" })
+          .then((user) => {
+            if (!user) {
+              return done(null, false, {
+                message: "That Phone Number is not registered",
+              });
+            } else {
+              //Match Pasword
+              bcrypt.compare(password, user.password, (err, isMatch) => {
+                if (err) {
+                  throw err;
+                }
+                if (isMatch) {
+                  return done(null, user);
+                } else {
+                  return done(null, false, { message: "Password Incorrect" });
+                }
+              });
+            }
+          })
+          .catch((err) => console.log(err));
+      }
+    )
+  );
+
   passport.serializeUser(function (user, done) {
     done(null, user.id);
   });

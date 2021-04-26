@@ -51,16 +51,9 @@
         <%} else {%>
           <p class='card-text'>Status: Yet to be recieved by <%= crops[i].buyerName %></p>
         <%}%>
-      <%} else if (title == "Dashboard") {%>
-        <% if (crops[i].sent) {%> 
-          <p class="card-text">Order Sent</p>
-          <% var link = "/buyer/receive/" + crops[i]._id %>      
-          <a href="<%=link %>" class="btn btn-primary btn-lg buybutton">Received Order</a>
-        <% } else{ %>
-          <p class="card-text">Yet to be dispatched.</td> 
-        <% } %>
         <br>
         <br>
+        <% var link = "/farmer/raisecomplaint/" + crops[i].cropID %>
         <a href="<%=link %>" class="btn btn-primary btn-lg buybutton">Complain</a>
       <% } %>
       <div class="card-footer">

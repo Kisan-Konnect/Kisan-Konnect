@@ -1,7 +1,9 @@
+var Complaints
+
 const mongoose = require("mongoose");
 
-const TransactionSchema = new mongoose.Schema({
-  name: {
+const ComplaintSchema = new mongoose.Schema({
+  reason: {
     type: String,
     required: true,
   },
@@ -10,29 +12,25 @@ const TransactionSchema = new mongoose.Schema({
     required: true,
     ref: "Crop",
   },
-  farmerID: {
+  complainerID: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: "User",
   },
-  buyerID: {
+  complainAgainstID: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: "User",
-  },
-  quantity: {
-    type: Number,
-    required: true,
   },
   date: {
     type: Date,
     default: Date.now,
   },
-  price: {
-    type: Number,
-    required: true,
+  complainerRole: {
+    type: String,
+    enum: ["farmer", "buyer"],
   },
 });
 
-const Transaction = mongoose.model("Transaction", TransactionSchema);
-module.exports = Transaction;
+Complaints = mongoose.model("Complaints", ComplaintSchema);
+module.exports = Complaints;
