@@ -11,9 +11,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@coreui/coreui": "^3.4.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
+    "chart.js": "^3.2.0",
     "connect-flash": "^0.1.1",
+    "coreui": "^0.1.5",
     "dotenv": "^8.2.0",
     "ejs": "^3.1.6",
     "express": "^4.17.1",
@@ -28,7 +31,7 @@
     "multer-gridfs-storage": "^4.2.0",
     "passport": "^0.4.1",
     "passport-local": "^1.0.0",
-    "penguin": "^0.4.8"
+    "penguin": "^0.3.5"
   },
   "devDependencies": {
     "nodemon": "^2.0.7"

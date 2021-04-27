@@ -1,4 +1,4 @@
-var Complaints
+var Complaints;
 
 const mongoose = require("mongoose");
 
@@ -24,7 +24,7 @@ const ComplaintSchema = new mongoose.Schema({
   },
   date: {
     type: Date,
-    default: Date.now,
+    default: new Date(),
   },
   complainerRole: {
     type: String,

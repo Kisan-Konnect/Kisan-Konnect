@@ -19,7 +19,7 @@ const UserSchema = new mongoose.Schema({
   },
   date: {
     type: Date,
-    default: Date.now,
+    default: new Date(),
   },
   role: {
     type: String,

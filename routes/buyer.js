@@ -11,6 +11,7 @@ const { find } = require("../models/Crop");
 var Grid = require("gridfs-stream");
 const Complaints = require("../models/Complaints");
 const conn = mongoose.connection;
+const findHumanAge = require("../config/globalFuncs").findHumanAge;
 
 function authBuyer(req) {
   if (req.isAuthenticated()) {
@@ -21,15 +22,12 @@ function authBuyer(req) {
   return Promise.resolve(false);
 }
 
-function nonBuyerRedirects(req, res){
+function nonBuyerRedirects(req, res) {
   if (req.user.role == "farmer") res.redirect("/farmer/dashboard");
   else if (req.user.role == "mod") res.redirect("/moderator/dashboard");
   else {
-    req.flash(
-      "error_msg",
-      "Please log in as a Buyer to view this resource "
-    );
-    res.redirect("/buyer/login")
+    req.flash("error_msg", "Please log in as a Buyer to view this resource ");
+    res.redirect("/buyer/login");
   }
 }
 router.get("/", (req, res) => {
@@ -210,29 +208,34 @@ function getImg(id) {
 function findListings(Model, Model1, uid = null) {
   return new Promise((resolve, reject) => {
     var a = [];
-    Model.find({ available: true }).then(async (crops) => {
-      for (i = 0; i < crops.length; i++) {
-        var doc = crops[i];
-        var farmer = await Model1.findById(doc.farmerID);
-        var newdoc = {
-          _id: doc._id,
-          name: doc.name,
-          price: doc.price,
-          quantity: doc.quantity,
-          farmerID: doc.farmerID,
-          date: doc.date,
-          __v: 0,
-        };
-        newdoc.farmerName = farmer.name;
-        await getImg(newdoc._id)
-          .then((image) => {
-            newdoc.image = image;
-            a.push(newdoc);
-          })
-          .catch((getimgerr) => console.error(getimgerr));
-      }
-      resolve(a);
-    });
+    Model.find({ available: true })
+      .then(async (crops) => {
+        for (i = 0; i < crops.length; i++) {
+          var doc = crops[i];
+          var farmer = await Model1.findById(doc.farmerID);
+          var newdoc = {
+            _id: doc._id,
+            name: doc.name,
+            price: doc.price,
+            quantity: doc.quantity,
+            farmerID: doc.farmerID,
+            date: doc.date,
+            __v: 0,
+          };
+          newdoc.farmerName = farmer.name;
+          await getImg(newdoc._id)
+            .then((image) => {
+              newdoc.image = image;
+              a.push(newdoc);
+            })
+            .catch((getimgerr) => console.error(getimgerr));
+        }
+        resolve(a);
+      })
+      .catch((err) => {
+        console.error(err);
+        res.redirect("/buyers/dashboard");
+      });
   });
 }
 
@@ -245,6 +248,7 @@ router.get("/listing", (req, res) => {
             crops: crops,
             req: req,
             title: "Marketplace",
+            findHumanAge: findHumanAge,
           });
         })
         .catch((err) => console.error(err));
@@ -303,7 +307,7 @@ async function findListingsOfUser(Model, uid, Model1) {
   });
 }
 
-function handleRender(req, res, title, Model){
+function handleRender(req, res, title, Model) {
   if (req.isAuthenticated()) {
     if (req.user.role == "buyer") {
       //QUERY IN PROGRESS
@@ -314,6 +318,7 @@ function handleRender(req, res, title, Model){
             crops: crops,
             req: req,
             title: title,
+            findHumanAge: findHumanAge,
           });
         })
         .catch((err) => console.error(err));
@@ -395,37 +400,40 @@ router.get("/receive/:trxID", (req, res) => {
   }
 });
 
-router.get('/raisecomplaint/:cropID', (req, res) => {
+router.get("/raisecomplaint/:cropID", (req, res) => {
   authBuyer(req)
     .then((isAuthBuyer) => {
       if (isAuthBuyer) {
-        var query = {cropID: req.params.cropID}
+        var query = { cropID: req.params.cropID };
         InProgress.findOne(query)
           .then((inprog) => {
-            if(!inprog){
+            if (!inprog) {
               res.redirect("/buyer/dashboard");
-            }
-            else if (inprog.buyerID.toString() == req.user._id.toString()){
-                Buyers.findById(inprog.farmerID).then((farmer) => {
-                  res.render("raiseComplaint", {req:req, user:farmer, crop:inprog});
-              })
-            }
-            else{
+            } else if (inprog.buyerID.toString() == req.user._id.toString()) {
+              Buyers.findById(inprog.farmerID).then((farmer) => {
+                res.render("raiseComplaint", {
+                  req: req,
+                  user: farmer,
+                  crop: inprog,
+                });
+              });
+            } else {
               console.log("buyer is auth but not crop", inprog, req.user);
-              res.redirect("/farmer/dashboard")
+              res.redirect("/farmer/dashboard");
             }
-          }).catch((err) => {
-            console.error(err)
-            res.redirect("/buyer/dashboard")
+          })
+          .catch((err) => {
+            console.error(err);
+            res.redirect("/buyer/dashboard");
           });
+      } else {
+        res.redirect("/buyer/login");
       }
-      else{
-        res.redirect("/buyer/login")
-      }
-    }).catch((autherr) => console.error(autherr));
-})
+    })
+    .catch((autherr) => console.error(autherr));
+});
 
-router.post('/raisecomplaint/:cropID', (req, res) => {
+router.post("/raisecomplaint/:cropID", (req, res) => {
   authBuyer(req)
     .then((isAuthBuyer) => {
       if (isAuthBuyer) {
@@ -433,35 +441,39 @@ router.post('/raisecomplaint/:cropID', (req, res) => {
         var cropID = req.params.cropID;
         var complainerID = req.user._id;
         var complainerRole = req.user.role;
-        InProgress.findOne({cropID: req.params.cropID}).then((inprog)=>{
-          if(inprog){
-            var complaint = new Complaints({
-              reason: reason,
-              cropID: cropID,
-              complainerID: complainerID,
-              complainerRole: complainerRole,
-              complainAgainstID: inprog.farmerID,
-            })
-            complaint.save().then(() => {
-              res.redirect("/buyer/dashboard");
-            }).catch((err) => {
-              console.error(err);
-              res.redirect("/buyer/dashboard");
-            })
-          }
-          else{
-            console.log("Can't find Bought Crop");
-            res.redirect("/farmer/dashboard");
-          }
-        }) .catch((err) => {
-          console.error(err);
-          res.redirect("/buyer/dashboard");
-        })       
-      }else{
-        res.redirect("/buyer/login")
+        InProgress.findOne({ cropID: req.params.cropID })
+          .then((inprog) => {
+            if (inprog) {
+              var complaint = new Complaints({
+                reason: reason,
+                cropID: cropID,
+                complainerID: complainerID,
+                complainerRole: complainerRole,
+                complainAgainstID: inprog.farmerID,
+              });
+              complaint
+                .save()
+                .then(() => {
+                  res.redirect("/buyer/dashboard");
+                })
+                .catch((err) => {
+                  console.error(err);
+                  res.redirect("/buyer/dashboard");
+                });
+            } else {
+              console.log("Can't find Bought Crop");
+              res.redirect("/farmer/dashboard");
+            }
+          })
+          .catch((err) => {
+            console.error(err);
+            res.redirect("/buyer/dashboard");
+          });
+      } else {
+        res.redirect("/buyer/login");
       }
-    }).catch((autherr) => console.error(autherr));
-  
-})
+    })
+    .catch((autherr) => console.error(autherr));
+});
 
 module.exports = router;

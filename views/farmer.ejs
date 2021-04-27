@@ -38,38 +38,23 @@
       <% } else{%>
           <p class='card-text'>Status: Yet to be bought</p>
         <% var editlink = "/farmer/editlisting/" + crops[i]._id %>
-          <a href="<%=editlink %>" class="btn btn-primary btn-lg buybutton">Edit</a>
+          <a href="<%=editlink %>" class="btn btn-primary btn-lg buybutton mb-2">Edit</a>
           <% var deletelink = "/farmer/deleteCurrent/" + crops[i]._id %>
-          <a href="<%=deletelink %>" class="btn btn-primary btn-lg buybutton" style="margin-top:2%">Delete</a>
+          <a href="<%=deletelink %>" class="btn btn-danger btn-lg buybutton mb-2" style="margin-top:2%">Delete</a>
       <%}%>
       <% if (title == "Dashboard") {%>
         <% if (!crops[i].sent) {%> 
           <% var link = "/farmer/sent/" + crops[i]._id %>
           <p class='card-text'>Status: Yet to be dispatched by you</p>
-          <a href="<%=link %>" class="btn btn-primary btn-lg buybutton">Dispached</a>
-          <br>
+          <a href="<%=link %>" class="btn btn-success btn-lg buybutton  mb-2">Dispached</a>
         <%} else {%>
           <p class='card-text'>Status: Yet to be recieved by <%= crops[i].buyerName %></p>
         <%}%>
-        <br>
-        <br>
         <% var link = "/farmer/raisecomplaint/" + crops[i].cropID %>
-        <a href="<%=link %>" class="btn btn-primary btn-lg buybutton">Complain</a>
+        <a href="<%=link %>" class="btn btn-danger btn-lg buybutton mb-2">Complain</a>
       <% } %>
       <div class="card-footer">
-      <p class='card-text'>Age: <% if (Math.floor((new Date() - crops[i].date) / 1000) / 31536000 > 1) { %>
-        <%=Math.floor(Math.floor((new Date() - crops[i].date) / 1000) / 31536000) + " year(s) ago"%>
-      <% } else if (Math.floor((new Date() - crops[i].date) / 1000) / 2592000 > 1) { %>
-        <%=Math.floor(Math.floor((new Date() - crops[i].date) / 1000) / 2592000) + " month(s) ago"%>
-      <% } else if (Math.floor((new Date() - crops[i].date) / 1000) / 86400 > 1) { %>
-        <%=Math.floor(Math.floor((new Date() - crops[i].date) / 1000) / 86400) + " day(s) ago"%>
-      <% } else if (Math.floor((new Date() - crops[i].date) / 1000) / 3600 > 1) { %>
-        <%=Math.floor(Math.floor((new Date() - crops[i].date) / 1000) / 3600) + " hour(s) ago"%>
-      <% } else if (Math.floor((new Date() - crops[i].date) / 1000) / 60 > 1) { %>
-        <%=Math.floor(Math.floor((new Date() - crops[i].date) / 1000) / 60) + " minute(s) ago"%>
-      <% } else{%>
-        <%=Math.floor((new Date() - crops[i].date) / 1000) + " second(s) ago"%>
-      <% }%> </p>
+      <p class='card-text'>Age: <%=findHumanAge(crops[i].date)%></p>
       
       </div>
     </div>

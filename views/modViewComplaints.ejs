@@ -38,19 +38,7 @@
             <p class="card-text">Quantity: <%=complaints[i].crop.quantity%> <br> </p>
           </div>
           <div class="card-footer">
-            <p>Age: <% if (Math.floor((new Date() - complaints[i].crop.date) / 1000) / 31536000 > 1) { %>
-              <%=Math.floor(Math.floor((new Date() - complaints[i].crop.date) / 1000) / 31536000) + " year(s) ago"%>
-            <% } else if (Math.floor((new Date() - complaints[i].crop.date) / 1000) / 2592000 > 1) { %>
-              <%=Math.floor(Math.floor((new Date() - complaints[i].crop.date) / 1000) / 2592000) + " month(s) ago"%>
-            <% } else if (Math.floor((new Date() - complaints[i].crop.date) / 1000) / 86400 > 1) { %>
-              <%=Math.floor(Math.floor((new Date() - complaints[i].crop.date) / 1000) / 86400) + " day(s) ago"%>
-            <% } else if (Math.floor((new Date() - complaints[i].crop.date) / 1000) / 3600 > 1) { %>
-              <%=Math.floor(Math.floor((new Date() - complaints[i].crop.date) / 1000) / 3600) + " hour(s) ago"%>
-            <% } else if (Math.floor((new Date() - complaints[i].crop.date) / 1000) / 60 > 1) { %>
-              <%=Math.floor(Math.floor((new Date() - complaints[i].crop.date) / 1000) / 60) + " minute(s) ago"%>
-            <% } else{%>
-              <%=Math.floor((new Date() - complaints[i].crop.date) / 1000) + " second(s) ago"%>
-            <% }%> </p>
+            <p class='card-text'>Age: <%=findHumanAge(complaints[i].crop.date)%></p>
           </div>
         </div>
         <div class="box1">
@@ -62,20 +50,7 @@
             <p class="card-text">Address: <%=complaints[i].complainant.address%> <br> </p>
           </div>
           <div class="card-footer">
-            <p>Account Age: <% if (Math.floor((new Date() - complaints[i].complainant.date) / 1000) / 31536000 > 1) { %>
-              <%=Math.floor(Math.floor((new Date() - complaints[i].complainant.date) / 1000) / 31536000) + " year(s) ago"%>
-            <% } else if (Math.floor((new Date() - complaints[i].complainant.date) / 1000) / 2592000 > 1) { %>
-              <%=Math.floor(Math.floor((new Date() - complaints[i].complainant.date) / 1000) / 2592000) + " month(s) ago"%>
-            <% } else if (Math.floor((new Date() - complaints[i].complainant.date) / 1000) / 86400 > 1) { %>
-              <%=Math.floor(Math.floor((new Date() - complaints[i].complainant.date) / 1000) / 86400) + " day(s) ago"%>
-            <% } else if (Math.floor((new Date() - complaints[i].complainant.date) / 1000) / 3600 > 1) { %>
-              <%=Math.floor(Math.floor((new Date() - complaints[i].complainant.date) / 1000) / 3600) + " hour(s) ago"%>
-            <% } else if (Math.floor((new Date() - complaints[i].complainant.date) / 1000) / 60 > 1) { %>
-              <%=Math.floor(Math.floor((new Date() - complaints[i].complainant.date) / 1000) / 60) + " minute(s) ago"%>
-            <% } else{%>
-              <%=Math.floor((new Date() - complaints[i].complainant.date) / 1000) + " second(s) ago"%>
-            <% }%> </p>
-            
+            <p>Account Age: <%=findHumanAge(complaints[i].complainant.date)%>            
           </div>
         </div>
         <div class="box1">
@@ -87,19 +62,7 @@
             <p class="card-text">Address: <%=complaints[i].complainee.address%> <br> </p>
             </div>
             <div class="card-footer">
-              <p>Account Age: <% if (Math.floor((new Date() - complaints[i].complainee.date) / 1000) / 31536000 > 1) { %>
-                <%=Math.floor(Math.floor((new Date() - complaints[i].complainee.date) / 1000) / 31536000) + " year(s) ago"%>
-              <% } else if (Math.floor((new Date() - complaints[i].complainee.date) / 1000) / 2592000 > 1) { %>
-                <%=Math.floor(Math.floor((new Date() - complaints[i].complainee.date) / 1000) / 2592000) + " month(s) ago"%>
-              <% } else if (Math.floor((new Date() - complaints[i].complainee.date) / 1000) / 86400 > 1) { %>
-                <%=Math.floor(Math.floor((new Date() - complaints[i].complainee.date) / 1000) / 86400) + " day(s) ago"%>
-              <% } else if (Math.floor((new Date() - complaints[i].complainee.date) / 1000) / 3600 > 1) { %>
-                <%=Math.floor(Math.floor((new Date() - complaints[i].complainee.date) / 1000) / 3600) + " hour(s) ago"%>
-              <% } else if (Math.floor((new Date() - complaints[i].complainee.date) / 1000) / 60 > 1) { %>
-                <%=Math.floor(Math.floor((new Date() - complaints[i].complainee.date) / 1000) / 60) + " minute(s) ago"%>
-              <% } else{%>
-                <%=Math.floor((new Date() - complaints[i].complainee.date) / 1000) + " second(s) ago"%>
-              <% }%> </p>
+              <p>Account Age: <%=findHumanAge(complaints[i].complainee.date)%></p>
           </div>
         </div>
         <div class="box1">
@@ -108,19 +71,7 @@
             <p class="card-text"><%=complaints[i].complaint.reason%> <br> </p>
           </div>
           <div class="card-footer">
-            <p>Complaint Age: <% if (Math.floor((new Date() - complaints[i].complaint.date) / 1000) / 31536000 > 1) { %>
-              <%=Math.floor(Math.floor((new Date() - complaints[i].complaint.date) / 1000) / 31536000) + " year(s) ago"%>
-            <% } else if (Math.floor((new Date() - complaints[i].complaint.date) / 1000) / 2592000 > 1) { %>
-              <%=Math.floor(Math.floor((new Date() - complaints[i].complaint.date) / 1000) / 2592000) + " month(s) ago"%>
-            <% } else if (Math.floor((new Date() - complaints[i].complaint.date) / 1000) / 86400 > 1) { %>
-              <%=Math.floor(Math.floor((new Date() - complaints[i].complaint.date) / 1000) / 86400) + " day(s) ago"%>
-            <% } else if (Math.floor((new Date() - complaints[i].complaint.date) / 1000) / 3600 > 1) { %>
-              <%=Math.floor(Math.floor((new Date() - complaints[i].complaint.date) / 1000) / 3600) + " hour(s) ago"%>
-            <% } else if (Math.floor((new Date() - complaints[i].complaint.date) / 1000) / 60 > 1) { %>
-              <%=Math.floor(Math.floor((new Date() - complaints[i].complaint.date) / 1000) / 60) + " minute(s) ago"%>
-            <% } else{%>
-              <%=Math.floor((new Date() - complaints[i].complaint.date) / 1000) + " second(s) ago"%>
-            <% }%> </p>
+            <p>Complaint Age: <%=findHumanAge(complaints[i].complaint.date)%></p>
         </div>
         </div>
     </div>

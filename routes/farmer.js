@@ -8,7 +8,7 @@ const Transaction = require("../models/Transaction");
 const InProgress = require("../models/InProgress");
 const Farmers = require("../models/User");
 const Complaints = require("../models/Complaints");
-
+const findHumanAge = require("../config/globalFuncs").findHumanAge;
 const bodyParser = require("body-parser");
 const path = require("path");
 var Grid = require("gridfs-stream");
@@ -81,14 +81,11 @@ function authFarmer(req) {
 
 function redirects(req, res) {
   if (req.user.role == "buyer") res.redirect("/buyer/dashboard");
-    else if (req.user.role == "moderator") res.redirect("/moderator/dashboard");
-    else {
-      req.flash(
-        "error_msg",
-        "Please log in as a Farmer to view this resource "
-      );
-      res.redirect("/farmer/login");
-    }
+  else if (req.user.role == "moderator") res.redirect("/moderator/dashboard");
+  else {
+    req.flash("error_msg", "Please log in as a Farmer to view this resource ");
+    res.redirect("/farmer/login");
+  }
 }
 
 router.get("/", (req, res) => {
@@ -460,7 +457,7 @@ async function findListingsOfUser(Model, uid) {
   return new Promise((resolve, reject) => {
     a = [];
     var result;
-    var query = {farmerID: uid};
+    var query = { farmerID: uid };
     Model.find(query).then(async (docs) => {
       for (i = 0; i < docs.length; i++) {
         doc = docs[i];
@@ -509,12 +506,13 @@ router.get("/dashboard", (req, res) => {
   authFarmer(req)
     .then((isAuthFarmer) => {
       if (isAuthFarmer) {
-        findListingsOfUser(InProgress, req.user._id,)
+        findListingsOfUser(InProgress, req.user._id)
           .then((crops) => {
             res.render("farmer", {
               crops: crops,
               req: req,
               title: "Dashboard",
+              findHumanAge: findHumanAge,
             });
           })
           .catch((err) => console.error(err));
@@ -537,6 +535,7 @@ router.get("/history", (req, res) => {
               crops: crops,
               req: req,
               title: "History",
+              findHumanAge: findHumanAge,
             });
           })
           .catch((err) => console.error(err));
@@ -574,6 +573,7 @@ router.get("/currentlistings", (req, res) => {
             req: req,
             crops: crops,
             title: "Current Listings",
+            findHumanAge: findHumanAge,
           });
         });
       } else {
@@ -630,37 +630,40 @@ router.get("/deleteCurrent/:cropID", (req, res) => {
     .catch((autherr) => console.error(autherr));
 });
 
-router.get('/raisecomplaint/:cropID', (req, res) => {
+router.get("/raisecomplaint/:cropID", (req, res) => {
   authFarmer(req)
     .then((isAuthFarmer) => {
       if (isAuthFarmer) {
-        var query = {cropID: req.params.cropID}
+        var query = { cropID: req.params.cropID };
         InProgress.findOne(query)
           .then((inprog) => {
-            if(!inprog){
+            if (!inprog) {
+              res.redirect("/farmer/dashboard");
+            } else if (inprog.farmerID.toString() == req.user._id.toString()) {
+              Farmers.findById(inprog.buyerID).then((buyer) => {
+                res.render("raiseComplaint", {
+                  req: req,
+                  user: buyer,
+                  crop: inprog,
+                });
+              });
+            } else {
+              console.log("farmer is auth but not crop", inprog, req.user);
               res.redirect("/farmer/dashboard");
             }
-            else if (inprog.farmerID.toString() == req.user._id.toString()){
-                Farmers.findById(inprog.buyerID).then((buyer) => {
-                  res.render("raiseComplaint", {req:req, user:buyer, crop:inprog});
-              })
-            }
-            else{
-              console.log("farmer is auth but not crop", inprog, req.user);
-              res.redirect("/farmer/dashboard")
-            }
-          }).catch((err) => {
-            console.error(err)
-            res.redirect("/farmer/dashboard")
+          })
+          .catch((err) => {
+            console.error(err);
+            res.redirect("/farmer/dashboard");
           });
+      } else {
+        res.redirect("/farmer/login");
       }
-      else{
-        res.redirect("/farmer/login")
-      }
-    }).catch((autherr) => console.error(autherr));
-})
+    })
+    .catch((autherr) => console.error(autherr));
+});
 
-router.post('/raisecomplaint/:cropID', (req, res) => {
+router.post("/raisecomplaint/:cropID", (req, res) => {
   authFarmer(req)
     .then((isAuthFarmer) => {
       if (isAuthFarmer) {
@@ -668,37 +671,41 @@ router.post('/raisecomplaint/:cropID', (req, res) => {
         var cropID = req.params.cropID;
         var complainerID = req.user._id;
         var complainerRole = req.user.role;
-        InProgress.findOne({cropID: req.params.cropID}).then((inprog)=>{
-          if(inprog){
-            var complaint = new Complaints({
-              reason: reason,
-              cropID: cropID,
-              complainerID: complainerID,
-              complainerRole: complainerRole,
-              complainAgainstID: inprog.buyerID,
-            })
-            console.log("COMPLAINTTTTT", complaint)
-            complaint.save().then(() => {
+        InProgress.findOne({ cropID: req.params.cropID })
+          .then((inprog) => {
+            if (inprog) {
+              var complaint = new Complaints({
+                reason: reason,
+                cropID: cropID,
+                complainerID: complainerID,
+                complainerRole: complainerRole,
+                complainAgainstID: inprog.buyerID,
+              });
+              console.log("COMPLAINTTTTT", complaint);
+              complaint
+                .save()
+                .then(() => {
+                  res.redirect("/farmer/dashboard");
+                })
+                .catch((err) => {
+                  console.error(err);
+                  res.redirect("/farmer/dashboard");
+                });
+            } else {
+              console.log("Can't find Bought Crop");
               res.redirect("/farmer/dashboard");
-            }).catch((err) => {
-              console.error(err);
-              res.redirect("/farmer/dashboard");
-            })
-          }
-          else{
-            console.log("Can't find Bought Crop");
+            }
+          })
+          .catch((err) => {
+            console.error(err);
             res.redirect("/farmer/dashboard");
-          }
-        }) .catch((err) => {
-          console.error(err);
-          res.redirect("/farmer/dashboard");
-        })       
-      }else{
-        res.redirect("/farmer/login")
+          });
+      } else {
+        res.redirect("/farmer/login");
       }
-    }).catch((autherr) => console.error(autherr));
-  
-})
+    })
+    .catch((autherr) => console.error(autherr));
+});
 
 router.get("/sent/:cropID", (req, res) => {
   authFarmer(req)

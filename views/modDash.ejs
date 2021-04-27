@@ -1,0 +1,210 @@
+<link
+  href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+  rel="stylesheet"
+  integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+  crossorigin="anonymous"
+/>
+
+<!-- JavaScript Bundle with Popper -->
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+  crossorigin="anonymous"
+></script>
+
+<link rel="stylesheet" href="../css/styles.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">Kisan Konnect</a>
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarNav"
+      aria-controls="navbarNav"
+      aria-expanded="false"
+      data-toggle="collapse" 
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+  <div class="navbar-collapse collapse" id='navbarNav'>
+    <ul class="nav navbar-nav mr-auto">
+      <li class="nav-item dropdown">
+        <a
+          class="nav-link dropdown-toggle"
+          type="button"
+          id="dropdownMenuButton"
+          data-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
+          Dashboard
+			</a>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          <a class="dropdown-item nav-link" href="#" id="weekly">Past Week</a>
+          <a class="dropdown-item nav-link" href="#" , id="monthly"
+            >Past Month</a
+          >
+          <a class="dropdown-item nav-link" href="#" , id="yearly">Past Year</a>
+          <a class="dropdown-item nav-link" href="#" , id="alltime">All Time</a>
+        </div>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/moderator/viewcomplaints">View Complaints</a>
+      </li>
+    </ul>
+    <ul class="nav navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" href="/moderator/dashboard"><%= req.user.name %></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/moderator/logout">Logout</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+<div class="container-fluid" style="margin-top: 2rem">
+  <canvas id="Users"></canvas>
+  <canvas id="Listings"></canvas>
+</div>
+
+<script>
+  var charts = [];
+  var timeframes = ["weekly", "monthly", "yearly", "alltime"];
+  function createChart(ctx, data, labels, label, title) {
+    var myChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: label,
+            data: data,
+            backgroundColor: [
+              "rgba(255, 99, 132, 0.2)",
+              "rgba(54, 162, 235, 0.2)",
+              "rgba(255, 206, 86, 0.2)",
+              "rgba(75, 192, 192, 0.2)",
+              "rgba(153, 102, 255, 0.2)",
+              "rgba(255, 159, 64, 0.2)",
+            ],
+            borderColor: [
+              "rgba(255, 99, 132, 1)",
+              "rgba(54, 162, 235, 1)",
+              "rgba(255, 206, 86, 1)",
+              "rgba(75, 192, 192, 1)",
+              "rgba(153, 102, 255, 1)",
+              "rgba(255, 159, 64, 1)",
+            ],
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true,
+          },
+        },
+        tension: 0.5,
+
+        pointRadius: 0,
+        plugins: {
+          title: {
+            display: true,
+            text: title,
+          },
+        },
+      },
+    });
+    charts.push(myChart);
+  }
+  document.getElementById("weekly").onclick = () => {
+    //POP AND DESTROY
+    if (charts.length !== 0) {
+      while (charts.length !== 0) {
+        charts.pop().destroy();
+      }
+    }
+
+    //NEW USERS
+    var data = "<%= userData.week %>".split(",").reverse();
+    var labels = "<%= userData.weekLabels %>".split(",").reverse();
+    var ctx = document.getElementById("Users").getContext("2d");
+    createChart(ctx, data, labels, "New Users", "New Users Last Week");
+
+    //NEW Listings
+    var data = "<%= cropData.week %>".split(",").reverse();
+    var labels = "<%= cropData.weekLabels %>".split(",").reverse();
+    var ctx = document.getElementById("Listings").getContext("2d");
+    createChart(ctx, data, labels, "New Listings", "New Listings Last Week");
+  };
+
+  document.getElementById("monthly").onclick = () => {
+    //POP AND DESTROY
+    if (charts.length !== 0) {
+      while (charts.length !== 0) {
+        charts.pop().destroy();
+      }
+    }
+
+    //NEW USERS
+    var data = "<%= userData.month %>".split(",").reverse();
+    var labels = "<%= userData.monthLabels %>".split(",").reverse();
+    var ctx = document.getElementById("Users").getContext("2d");
+    createChart(ctx, data, labels, "New Users", "New Users Last Month");
+
+    //NEW Listings
+    var data = "<%= cropData.month %>".split(",").reverse();
+    var labels = "<%= cropData.monthLabels %>".split(",").reverse();
+    var ctx = document.getElementById("Listings").getContext("2d");
+    createChart(ctx, data, labels, "New Listings", "New Listings Last Month");
+  };
+
+  document.getElementById("yearly").onclick = () => {
+    //POP AND DESTROY
+    if (charts.length !== 0) {
+      while (charts.length !== 0) {
+        charts.pop().destroy();
+      }
+    }
+
+    //NEW USERS
+    var data = "<%= userData.year %>".split(",").reverse();
+    var labels = "<%= userData.yearLabels %>".split(",").reverse();
+    var ctx = document.getElementById("Users").getContext("2d");
+    createChart(ctx, data, labels, "New Users", "New Users Last Year");
+
+    //NEW Listings
+    var data = "<%= cropData.year %>".split(",").reverse();
+    var labels = "<%= cropData.yearLabels %>".split(",").reverse();
+    var ctx = document.getElementById("Listings").getContext("2d");
+    createChart(ctx, data, labels, "New Listings", "New Listings Last Year");
+  };
+
+  document.getElementById("alltime").onclick = () => {
+    //POP AND DESTROY
+    if (charts.length !== 0) {
+      while (charts.length !== 0) {
+        charts.pop().destroy();
+      }
+    }
+
+    //NEW USERS
+    var data = "<%= userData.alltime %>".split(",").reverse();
+    var labels = "<%= userData.alltimeLabels %>".split(",").reverse();
+    var ctx = document.getElementById("Users").getContext("2d");
+    createChart(ctx, data, labels, "New Users", "New Users Last Week");
+
+    //NEW Listings
+    var data = "<%= cropData.alltime %>".split(",").reverse();
+    var labels = "<%= cropData.alltimeLabels %>".split(",").reverse();
+    var ctx = document.getElementById("Listings").getContext("2d");
+    createChart(ctx, data, labels, "New Listings", "New Listings Last Week");
+  };
+
+  document.getElementById("monthly").click();
+</script>

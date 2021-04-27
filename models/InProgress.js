@@ -32,7 +32,7 @@ const InProgressCropSchema = new mongoose.Schema({
   },
   date: {
     type: Date,
-    default: Date.now,
+    default: new Date(),
   },
   sent: {
     type: Boolean,
