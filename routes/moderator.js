@@ -285,13 +285,9 @@ function getTotalValues(Model, start, end) {
   });
 }
 
-function daysInMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth(), 0).getDate();
-}
-
 function getData(Model) {
   var startDate = new Date(2018, 0, 1);
-  console.log("STARTTTTTT: ", startDate);
+  // console.log("STARTTTTTT: ", startDate);
   return new Promise(async (resolve, reject) => {
     // Week & Month
     dayLabelMap = {
@@ -379,13 +375,13 @@ function getData(Model) {
       var count = await getTotalValues(Model, d1, d2);
       alltimeLabels.push(date1.getFullYear().toString());
       alltime.push(count);
-      console.log(date1.toString());
+      // console.log(date1.toString());
       date1.setFullYear(date1.getFullYear() - 1);
     }
     temp.alltime = alltime;
     temp.alltimeLabels = alltimeLabels;
 
-    console.log("TEMMMMMMPPPPPPPPPPPPPPPP", temp);
+    // console.log("TEMMMMMMPPPPPPPPPPPPPPPP", temp);
 
     resolve(temp);
   });
